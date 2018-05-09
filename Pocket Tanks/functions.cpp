@@ -27,6 +27,86 @@ void InitLandscape(Landscape *landscape)
 	}
 }
 
+void InitLandscape2(Landscape2 **landscape) //
+{
+	bool points[SCREEN_WIDTH + 1][SCREEN_HEIGHT + 1];
+
+	for (int i = 0; i <= SCREEN_WIDTH; i++)
+	{
+		for (int j = 0; j <= SCREEN_HEIGHT; j++)
+		{
+			if (0.00000058923110602294 * i * i * i - 0.00095600225436248687 * i * i + 0.36244377417817474907 * i + 314.64443045660573261557 <= j)
+			{
+				points[i][j] = true;
+			}
+		}
+	}
+	
+	*landscape = (Landscape2 *)malloc(sizeof(Landscape2));
+	(*landscape)->root = NULL;
+	(*landscape)->type = 1;
+	(*landscape)->rect.x = (*landscape)->rect.y = 0;
+	(*landscape)->rect.w = SCREEN_WIDTH;
+	(*landscape)->rect.h = SCREEN_HEIGHT;
+	(*landscape)->northWest = (*landscape)->northEast = (*landscape)->southWest = (*landscape)->southEast = NULL;
+
+	Landscape2 *current = *landscape;
+	bool flag = true; //
+	bool cancel = false; //
+
+	while (!cancel) //
+	{
+		for (int i = current->rect.x; i < current->rect.x + current->rect.w; i++)
+		{
+			for (int j = current->rect.y; j < current->rect.y + current->rect.h; j++)
+			{
+				flag &= points[i][j];
+			}
+		}
+
+		if (!flag)
+		{
+			current->northWest = (Landscape2 *)malloc(sizeof(Landscape2));
+			current->northWest->root = current;
+			current->northWest->type = 0;
+			current->northWest->rect.w = current->rect.w / 2;
+			current->northWest->rect.h = current->rect.h / 2;
+			current->northWest->rect.x = current->rect.x;
+			current->northWest->rect.y = current->rect.y;
+			current->northWest->northWest = current->northWest->northEast = current->northWest->southWest = current->northWest->southEast = NULL;
+
+			current->northEast = (Landscape2 *)malloc(sizeof(Landscape2));
+			current->northEast->root = current;
+			current->northEast->type = 0;
+			current->northEast->rect.w = current->rect.w / 2;
+			current->northEast->rect.h = current->rect.h / 2;
+			current->northEast->rect.x = current->rect.x + current->northEast->rect.w;
+			current->northEast->rect.y = current->rect.y;
+			current->northEast->northWest = current->northEast->northEast = current->northEast->southWest = current->northEast->southEast = NULL;
+
+			current->southWest = (Landscape2 *)malloc(sizeof(Landscape2));
+			current->southWest->root = current;
+			current->southWest->type = 0;
+			current->southWest->rect.w = current->rect.w / 2;
+			current->southWest->rect.h = current->rect.h / 2;
+			current->southWest->rect.x = current->rect.x;
+			current->southWest->rect.y = current->rect.y + current->southWest->rect.h;
+			current->southWest->northWest = current->southWest->northEast = current->southWest->southWest = current->southWest->southEast = NULL;
+
+			current->southEast = (Landscape2 *)malloc(sizeof(Landscape2));
+			current->southEast->root = current;
+			current->southEast->type = 0;
+			current->southEast->rect.w = current->rect.w / 2;
+			current->southEast->rect.h = current->rect.h / 2;
+			current->southEast->rect.x = current->rect.x + current->southWest->rect.w;
+			current->southEast->rect.y = current->rect.y + current->southWest->rect.h;
+			current->southEast->northWest = current->southEast->northEast = current->southEast->southWest = current->southEast->southEast = NULL;
+		}
+
+		// ...
+	}
+}
+
 void Gravitate(Player players[], Landscape landscape)
 {
 	while (players[0].tank.body.rect.y < landscape.points[players[0].tank.body.rect.x].y -

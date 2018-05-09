@@ -10,6 +10,7 @@
 LONGLONG StartCounter(double *);
 double GetCounter(ULONGLONG, double);
 void InitLandscape(Landscape *);
+void InitLandscape2(Landscape2 **); //
 void Gravitate(Player[], Landscape);
 void DrawLandscape(SDL_Renderer *, Landscape);
 void InitPlayers(Player[]);
