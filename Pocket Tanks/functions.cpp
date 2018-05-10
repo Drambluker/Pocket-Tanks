@@ -17,6 +17,11 @@ double GetCounter(ULONGLONG CounterStart, double PCFreq)
 	return (double)(li.QuadPart - CounterStart) / PCFreq;
 }
 
+void LoadScene(Scene *scene)
+{
+
+}
+
 void InitLandscape(Landscape *landscape)
 {
 	for (int i = 0; i <= SCREEN_WIDTH; i++)
@@ -29,7 +34,7 @@ void InitLandscape(Landscape *landscape)
 
 void InitLandscape2(Landscape2 **landscape) //
 {
-	bool points[SCREEN_WIDTH + 1][SCREEN_HEIGHT + 1];
+	INT8 points[SCREEN_WIDTH + 1][SCREEN_HEIGHT + 1];
 
 	for (int i = 0; i <= SCREEN_WIDTH; i++)
 	{
@@ -37,74 +42,97 @@ void InitLandscape2(Landscape2 **landscape) //
 		{
 			if (0.00000058923110602294 * i * i * i - 0.00095600225436248687 * i * i + 0.36244377417817474907 * i + 314.64443045660573261557 <= j)
 			{
-				points[i][j] = true;
+				points[i][j] = 1;
+			}
+			else
+			{
+				points[i][j] = 0;
 			}
 		}
 	}
 	
 	*landscape = (Landscape2 *)malloc(sizeof(Landscape2));
 	(*landscape)->root = NULL;
-	(*landscape)->type = 1;
+	(*landscape)->type = 0;
 	(*landscape)->rect.x = (*landscape)->rect.y = 0;
 	(*landscape)->rect.w = SCREEN_WIDTH;
 	(*landscape)->rect.h = SCREEN_HEIGHT;
-	(*landscape)->northWest = (*landscape)->northEast = (*landscape)->southWest = (*landscape)->southEast = NULL;
+	(*landscape)->quadrants[0] = (*landscape)->quadrants[1] = (*landscape)->quadrants[2] = (*landscape)->quadrants[3] = NULL;
 
 	Landscape2 *current = *landscape;
-	bool flag = true; //
-	bool cancel = false; //
+	INT8 andFlag = 1;
+	INT8 orFlag = 0;
 
-	while (!cancel) //
+	do
 	{
 		for (int i = current->rect.x; i < current->rect.x + current->rect.w; i++)
 		{
 			for (int j = current->rect.y; j < current->rect.y + current->rect.h; j++)
 			{
-				flag &= points[i][j];
+				andFlag *= points[i][j];
+
+				if (points[i][j] == 1)
+				{
+					orFlag = points[i][j];
+				}
 			}
 		}
 
-		if (!flag)
+		if (orFlag == 1 && andFlag == 0)
 		{
-			current->northWest = (Landscape2 *)malloc(sizeof(Landscape2));
-			current->northWest->root = current;
-			current->northWest->type = 0;
-			current->northWest->rect.w = current->rect.w / 2;
-			current->northWest->rect.h = current->rect.h / 2;
-			current->northWest->rect.x = current->rect.x;
-			current->northWest->rect.y = current->rect.y;
-			current->northWest->northWest = current->northWest->northEast = current->northWest->southWest = current->northWest->southEast = NULL;
+			if (current->rect.w / 2 != 0 && current->rect.h / 2 != 0)
+			{
+				DevideQuadrant(&current);
 
-			current->northEast = (Landscape2 *)malloc(sizeof(Landscape2));
-			current->northEast->root = current;
-			current->northEast->type = 0;
-			current->northEast->rect.w = current->rect.w / 2;
-			current->northEast->rect.h = current->rect.h / 2;
-			current->northEast->rect.x = current->rect.x + current->northEast->rect.w;
-			current->northEast->rect.y = current->rect.y;
-			current->northEast->northWest = current->northEast->northEast = current->northEast->southWest = current->northEast->southEast = NULL;
+				// ...
+			}
+			else
+			{
+				current->type = 1;
 
-			current->southWest = (Landscape2 *)malloc(sizeof(Landscape2));
-			current->southWest->root = current;
-			current->southWest->type = 0;
-			current->southWest->rect.w = current->rect.w / 2;
-			current->southWest->rect.h = current->rect.h / 2;
-			current->southWest->rect.x = current->rect.x;
-			current->southWest->rect.y = current->rect.y + current->southWest->rect.h;
-			current->southWest->northWest = current->southWest->northEast = current->southWest->southWest = current->southWest->southEast = NULL;
+				// ...
+			}
+		}
+		else if (orFlag == 1 && andFlag == 1)
+		{
+			current->type = 1;
 
-			current->southEast = (Landscape2 *)malloc(sizeof(Landscape2));
-			current->southEast->root = current;
-			current->southEast->type = 0;
-			current->southEast->rect.w = current->rect.w / 2;
-			current->southEast->rect.h = current->rect.h / 2;
-			current->southEast->rect.x = current->rect.x + current->southWest->rect.w;
-			current->southEast->rect.y = current->rect.y + current->southWest->rect.h;
-			current->southEast->northWest = current->southEast->northEast = current->southEast->southWest = current->southEast->southEast = NULL;
+			// ...
+		}
+		else
+		{
+			current->type = -1;
+
+			// ...
 		}
 
 		// ...
+	} while (current->root != NULL);
+}
+
+void DevideQuadrant(Landscape2 **landscape)
+{
+	for (int i = 0; i < 4; i++)
+	{
+		(*landscape)->quadrants[i] = (Landscape2 *)malloc(sizeof(Landscape2));
+		(*landscape)->quadrants[i]->root = (*landscape);
+		(*landscape)->quadrants[i]->type = 0;
+		(*landscape)->quadrants[i]->rect.w = (*landscape)->rect.w / 2;
+		(*landscape)->quadrants[i]->rect.h = (*landscape)->rect.h / 2;
+		(*landscape)->quadrants[i]->quadrants[0] = (*landscape)->quadrants[i]->quadrants[1] = (*landscape)->quadrants[i]->quadrants[2] = (*landscape)->quadrants[i]->quadrants[3] = NULL;
 	}
+
+	(*landscape)->quadrants[0]->rect.x = (*landscape)->rect.x;
+	(*landscape)->quadrants[0]->rect.y = (*landscape)->rect.y;
+
+	(*landscape)->quadrants[1]->rect.x = (*landscape)->rect.x + (*landscape)->quadrants[1]->rect.w;
+	(*landscape)->quadrants[1]->rect.y = (*landscape)->rect.y;
+
+	(*landscape)->quadrants[2]->rect.x = (*landscape)->rect.x;
+	(*landscape)->quadrants[2]->rect.y = (*landscape)->rect.y + (*landscape)->quadrants[2]->rect.h;
+
+	(*landscape)->quadrants[3]->rect.x = (*landscape)->rect.x + (*landscape)->quadrants[3]->rect.w;
+	(*landscape)->quadrants[3]->rect.y = (*landscape)->rect.y + (*landscape)->quadrants[3]->rect.h;
 }
 
 void Gravitate(Player players[], Landscape landscape)
@@ -163,6 +191,7 @@ void InitPlayers(Player players[])
 	for (int i = 0; i < 2; i++)
 	{
 		players[i].score = 0;
+		players[i].power = 50;
 		players[i].tank.body.texture = NULL;
 		players[i].tank.cannon.texture = NULL;
 		players[i].tank.cannon.angle = 0;
@@ -171,21 +200,21 @@ void InitPlayers(Player players[])
 		players[i].tailWeapon = NULL;
 		weapon = (Weapon *)malloc(sizeof(Weapon));
 		weapon->name = "Weapon 1";
-		weapon->power = 50;
+		// weapon->power = 50;
 		weapon->score = 1;
 		weapon->angle = 0;
 		weapon->gravitatin = 0;
 		PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
 		weapon = (Weapon *)malloc(sizeof(Weapon));
 		weapon->name = "Weapon 2";
-		weapon->power = 50;
+		// weapon->power = 50;
 		weapon->score = 2;
 		weapon->angle = 0;
 		weapon->gravitatin = 0;
 		PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
 		weapon = (Weapon *)malloc(sizeof(Weapon));
 		weapon->name = "Weapon 3";
-		weapon->power = 50;
+		// weapon->power = 50;
 		weapon->score = 3;
 		weapon->angle = 0;
 		weapon->gravitatin = 0;
@@ -631,7 +660,7 @@ void CreateAndDrawBottomPanels(SDL_Renderer *renderer, TTF_Font *font, Player pl
 			//Creating Texture For Gun's Name
 			textureGunName = CreateTextureFromText(renderer, font, players[i].headWeapon->name, fg, bg);
 			//Creating Texture For Gun's Puissance
-			textureGunPuissance = CreateTextureFromNumber(renderer, font, players[i].headWeapon->power, fg, bg);
+			textureGunPuissance = CreateTextureFromNumber(renderer, font, players[i].power, fg, bg); //
 		}
 		else
 		{
@@ -743,10 +772,10 @@ void BottomPanelInterations(Player players[], int Mouse_x, int Mouse_y, int Play
 	}
 	if ((Mouse_x >= Button3Left_rect.x && Mouse_x <= Button3Left_rect.x + Button3Left_rect.w) && (Mouse_y >= Button3Left_rect.y && Mouse_y <= Button3Left_rect.y + Button3Left_rect.h))
 	{
-		if (players[PlayerLap - 1].headWeapon->power > 0) players[PlayerLap - 1].headWeapon->power--;
+		if (players[PlayerLap - 1].power > 0) players[PlayerLap - 1].power--; //
 	}
 	if ((Mouse_x >= Button3Right_rect.x && Mouse_x <= Button3Right_rect.x + Button3Right_rect.w) && (Mouse_y >= Button3Right_rect.y && Mouse_y <= Button3Right_rect.y + Button3Right_rect.h))
 	{
-		if(players[PlayerLap - 1].headWeapon->power < 100) players[PlayerLap - 1].headWeapon->power++;
+		if(players[PlayerLap - 1].power < 100) players[PlayerLap - 1].power++; //
 	}
 }

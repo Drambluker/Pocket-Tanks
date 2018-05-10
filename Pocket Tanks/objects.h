@@ -27,7 +27,6 @@ struct Tank
 struct Weapon
 {
 	const char *name;
-	int power; // переместить в Player
 	int score;
 	double angle;
 	double gravitatin; //
@@ -41,6 +40,7 @@ struct Player
 {
 	const char *name;
 	int score;
+	int power;
 	Tank tank;
 	Weapon *headWeapon, *tailWeapon;
 };
@@ -55,10 +55,13 @@ struct Landscape2 // Дерево квадрантов
 	INT8 type;
 	SDL_Rect rect;
 	Landscape2 *root;
-	Landscape2 *northWest;
-	Landscape2 *northEast;
-	Landscape2 *southWest;
-	Landscape2 *southEast;
+	Landscape2 *quadrants[4];
+};
+
+struct Scene
+{
+	Player players[2];
+	Landscape landscape;
 };
 
 // Hank
