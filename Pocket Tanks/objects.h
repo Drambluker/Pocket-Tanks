@@ -42,7 +42,6 @@ struct Player
 	int score;
 	int power;
 	Tank tank;
-	Weapon *current;
 	Weapon *headWeapon, *tailWeapon;
 };
 

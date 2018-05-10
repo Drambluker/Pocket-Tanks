@@ -399,7 +399,6 @@ void InitPlayers(Player players[])
 		weapon->angle = 0;
 		weapon->gravitatin = 0;
 		PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
-		players[i].current = players[i].headWeapon;
 	}
 
 	// Player 1
