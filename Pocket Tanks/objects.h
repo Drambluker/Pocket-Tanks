@@ -42,6 +42,7 @@ struct Player
 	int score;
 	int power;
 	Tank tank;
+	Weapon *current;
 	Weapon *headWeapon, *tailWeapon;
 };
 
@@ -71,6 +72,11 @@ struct Scene
 	SDL_Window *window;
 	SDL_Renderer *renderer;
 	TTF_Font *font;
+	SDL_Event event;
+	INT8 playerLap;
+	Weapon *activeWeapon;
+	double oldTime, newTime, deltaTime, PCFreq;
+	LONGLONG timeStart;
 	Landscape landscape;
 	Player players[2];
 	PlayerTopPanel topPanels[2];

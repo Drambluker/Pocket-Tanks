@@ -65,6 +65,144 @@ void LoadScene(Scene *scene)
 	InitTopPanels((*scene).topPanels);
 
 	LoadTextures((*scene).renderer, (*scene).players);
+
+	scene->playerLap = 1;
+	scene->activeWeapon = NULL;
+	scene->oldTime = scene->newTime = scene->deltaTime = 0;
+	scene->timeStart = StartCounter(&scene->PCFreq);
+}
+
+bool ProcessEvents(Scene *scene)
+{
+	(*scene).newTime = GetCounter((*scene).timeStart, (*scene).PCFreq);
+	(*scene).deltaTime = (*scene).newTime - (*scene).oldTime;
+	(*scene).oldTime = (*scene).newTime;
+
+	while (SDL_PollEvent(&scene->event)) {
+		if ((*scene).event.type == SDL_QUIT)
+			return true;
+
+		if ((*scene).event.type == SDL_MOUSEBUTTONDOWN && (*scene).event.button.button == SDL_BUTTON_LEFT)
+		{
+			BottomPanelInterations((*scene).players, (*scene).event.button.x, (*scene).event.button.y, (*scene).playerLap, (*scene).activeWeapon);
+		}
+
+		if ((*scene).event.type == SDL_KEYDOWN && (*scene).event.key.keysym.sym == SDLK_UP)
+		{
+			if ((*scene).playerLap == 1) (*scene).players[(*scene).playerLap - 1].tank.cannon.angle--;
+			if ((*scene).playerLap == 2) (*scene).players[(*scene).playerLap - 1].tank.cannon.angle++;
+		}
+
+		if ((*scene).event.type == SDL_KEYDOWN && (*scene).event.key.keysym.sym == SDLK_DOWN)
+		{
+			if ((*scene).playerLap == 1) (*scene).players[(*scene).playerLap - 1].tank.cannon.angle++;
+			if ((*scene).playerLap == 2) (*scene).players[(*scene).playerLap - 1].tank.cannon.angle--;
+		}
+
+		// if sizechanged - mustRedraw = true;
+
+		if ((*scene).event.type == SDL_KEYDOWN && (*scene).event.key.keysym.sym == SDLK_LEFT)
+		{
+			(*scene).players[(*scene).playerLap - 1].tank.body.rect.x -= 0.03 * (*scene).deltaTime;
+		}
+
+		if ((*scene).event.type == SDL_KEYDOWN && (*scene).event.key.keysym.sym == SDLK_RIGHT)
+		{
+			(*scene).players[(*scene).playerLap - 1].tank.body.rect.x += 0.06 * (*scene).deltaTime;
+		}
+
+		if ((*scene).event.type == SDL_KEYDOWN && (*scene).event.key.keysym.sym == SDLK_SPACE && (*scene).activeWeapon == NULL)
+		{
+			(*scene).activeWeapon = PopWeapon(&scene->players[(*scene).playerLap - 1].headWeapon);
+
+			if ((*scene).activeWeapon == NULL && (*scene).playerLap == 2)
+			{
+				return true;
+			}
+
+			if ((*scene).playerLap == 1) (*scene).playerLap = 2;
+			else (*scene).playerLap = 1;
+		}
+	}
+
+	return false;
+}
+
+void UpdateLogic(Scene *scene)
+{
+	SDL_SetRenderDrawColor((*scene).renderer, 160, 200, 160, 0);
+	SDL_RenderClear((*scene).renderer);
+
+	(*scene).players[0].tank.angle = 180 / Pi * atan((double)((*scene).landscape.points[(*scene).players[0].tank.body.rect.x + (*scene).players[0].tank.body.rect.w].y -
+		(*scene).landscape.points[(*scene).players[0].tank.body.rect.x].y) / ((*scene).landscape.points[(*scene).players[0].tank.body.rect.x + (*scene).players[0].tank.body.rect.w].x -
+		(*scene).landscape.points[(*scene).players[0].tank.body.rect.x].x));
+	(*scene).players[1].tank.angle = 180 / Pi * atan((double)((*scene).landscape.points[(*scene).players[1].tank.body.rect.x + (*scene).players[1].tank.body.rect.w].y -
+		(*scene).landscape.points[(*scene).players[1].tank.body.rect.x].y) / ((*scene).landscape.points[(*scene).players[1].tank.body.rect.x + (*scene).players[1].tank.body.rect.w].x -
+		(*scene).landscape.points[(*scene).players[1].tank.body.rect.x].x));
+
+	Gravitate((*scene).players, (*scene).landscape);
+
+	if ((*scene).activeWeapon != NULL && GotInTheTank((*scene).activeWeapon, (*scene).players[((*scene).playerLap == 2) ? 1 : 0]))
+	{
+		(*scene).players[((*scene).playerLap == 2) ? 0 : 1].score += (*scene).activeWeapon->score;
+	}
+
+	if ((*scene).activeWeapon != NULL && ((*scene).activeWeapon->rect.y >= (*scene).landscape.points[(*scene).activeWeapon->rect.x].y || GotInTheTank((*scene).activeWeapon, (*scene).players[((*scene).playerLap == 2) ? 1 : 0])))
+	{
+		SDL_DestroyTexture((*scene).activeWeapon->texture);
+		(*scene).activeWeapon->texture = NULL;
+		free((*scene).activeWeapon);
+		(*scene).activeWeapon = NULL;
+	}
+}
+
+void DoRender(Scene *scene)
+{
+	DrawLandscape((*scene).renderer, (*scene).landscape);
+	DrawTanks((*scene).renderer, (*scene).players);
+
+	RenderWeapon((*scene).renderer, (*scene).activeWeapon);
+
+	if ((*scene).activeWeapon != NULL && (*scene).activeWeapon->rect.y < (*scene).landscape.points[(*scene).activeWeapon->rect.x].y)
+	{
+		(*scene).activeWeapon->rect.x += 0.005 * (*scene).players[((*scene).playerLap == 2) ? 0 : 1].power * cos((*scene).activeWeapon->angle) * (*scene).deltaTime;
+		(*scene).activeWeapon->rect.y += 0.005 * (*scene).players[((*scene).playerLap == 2) ? 0 : 1].power * sin((*scene).activeWeapon->angle) * (*scene).deltaTime + (*scene).activeWeapon->gravitatin * (*scene).deltaTime;
+		(*scene).activeWeapon->gravitatin += 0.0025;
+	}
+
+	CreateAndDrawTopPanels((*scene).renderer, (*scene).font, (*scene).players, (*scene).topPanels);
+	CreateAndDrawBottomPanels((*scene).renderer, (*scene).font, (*scene).players);
+
+	//CreateAndDrawTopPanels(renderer, font, players, topPanels, mustRedraw); //
+	//CreateAndDrawBottomPanels(renderer, font, players, mustRedraw); //
+	//mustRedraw = false; //
+
+	SDL_RenderPresent((*scene).renderer);
+}
+
+void DestroyScene(Scene *scene)
+{
+	Weapon *tempWeapon = NULL;
+
+	for (int i = 0; i < 2; i++)
+	{
+		tempWeapon = PopWeapon(&scene->players[i].headWeapon);
+
+		while (tempWeapon != NULL)
+		{
+			free(tempWeapon);
+			tempWeapon = NULL;
+			tempWeapon = PopWeapon(&scene->players[i].headWeapon);
+		}
+	}
+
+	DestroyTextures((*scene).players, (*scene).activeWeapon);
+
+	SDL_DestroyRenderer((*scene).renderer);
+	SDL_DestroyWindow((*scene).window);
+	TTF_CloseFont((*scene).font);
+	TTF_Quit();
+	SDL_Quit();
 }
 
 void InitLandscape(Landscape *landscape)
@@ -245,25 +383,23 @@ void InitPlayers(Player players[])
 		players[i].tailWeapon = NULL;
 		weapon = (Weapon *)malloc(sizeof(Weapon));
 		weapon->name = "Weapon 1";
-		// weapon->power = 50;
 		weapon->score = 1;
 		weapon->angle = 0;
 		weapon->gravitatin = 0;
 		PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
 		weapon = (Weapon *)malloc(sizeof(Weapon));
 		weapon->name = "Weapon 2";
-		// weapon->power = 50;
 		weapon->score = 2;
 		weapon->angle = 0;
 		weapon->gravitatin = 0;
 		PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
 		weapon = (Weapon *)malloc(sizeof(Weapon));
 		weapon->name = "Weapon 3";
-		// weapon->power = 50;
 		weapon->score = 3;
 		weapon->angle = 0;
 		weapon->gravitatin = 0;
 		PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
+		players[i].current = players[i].headWeapon;
 	}
 
 	// Player 1
