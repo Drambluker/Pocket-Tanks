@@ -58,15 +58,20 @@ struct Landscape2 // Дерево квадрантов
 	Landscape2 *quadrants[4];
 };
 
-struct Scene
-{
-	Player players[2];
-	Landscape landscape;
-};
-
 // Hank
 struct PlayerTopPanel
 {
 	SDL_Rect rect;
 	Player player;
+};
+
+// Eric
+struct Scene
+{
+	SDL_Window *window;
+	SDL_Renderer *renderer;
+	TTF_Font *font;
+	Landscape landscape;
+	Player players[2];
+	PlayerTopPanel topPanels[2];
 };

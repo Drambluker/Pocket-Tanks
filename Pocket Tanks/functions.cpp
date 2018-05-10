@@ -19,7 +19,52 @@ double GetCounter(ULONGLONG CounterStart, double PCFreq)
 
 void LoadScene(Scene *scene)
 {
+	if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
+	{
+		printf_s("SDL_Error: %s\n", SDL_GetError());
+		system("pause");
+		exit(1);
+	}
 
+	if (TTF_Init() < 0)
+	{
+		printf_s("TTF_Error: %s\n", TTF_GetError());
+		system("pause");
+		exit(1);
+	}
+
+	(*scene).window = SDL_CreateWindow("Pocket Tanks", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+
+	if (!(*scene).window)
+	{
+		printf_s("SDL_Error: %s\n", SDL_GetError());
+		system("pause");
+		exit(1);
+	}
+
+	(*scene).renderer = SDL_CreateRenderer((*scene).window, -1, 0);
+
+	if (!(*scene).renderer)
+	{
+		printf_s("SDL_Error: %s\n", SDL_GetError());
+		system("pause");
+		exit(1);
+	}
+
+	(*scene).font = TTF_OpenFont("arial.ttf", 200);
+
+	if (!(*scene).font)
+	{
+		printf_s("TTF_Error: %s\n", TTF_GetError());
+		system("pause");
+		exit(1);
+	}
+
+	InitLandscape(&scene->landscape);
+	InitPlayers((*scene).players);
+	InitTopPanels((*scene).topPanels);
+
+	LoadTextures((*scene).renderer, (*scene).players);
 }
 
 void InitLandscape(Landscape *landscape)
