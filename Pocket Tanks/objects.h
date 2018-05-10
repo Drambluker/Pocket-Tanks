@@ -29,7 +29,7 @@ struct Weapon
 	const char *name;
 	int score;
 	double angle;
-	double gravitatin; //
+	double gravitatin;
 	SDL_Rect rect;
 	SDL_Texture *texture;
 	Weapon *next;
