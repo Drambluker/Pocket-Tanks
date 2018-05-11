@@ -50,13 +50,13 @@ struct Landscape
 	SDL_Point points[SCREEN_WIDTH + 1];
 };
 
-struct Landscape2 // Дерево квадрантов
-{
-	INT8 type;
-	SDL_Rect rect;
-	Landscape2 *root;
-	Landscape2 *quadrants[4];
-};
+//struct Landscape2 // Дерево квадрантов
+//{
+//	INT8 type;
+//	SDL_Rect rect;
+//	Landscape2 *root;
+//	Landscape2 *quadrants[4];
+//};
 
 // Hank
 struct PlayerTopPanel
