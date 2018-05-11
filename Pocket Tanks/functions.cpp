@@ -25,6 +25,27 @@ double FRand(double min, double max)
 	return min + f * (max - min);
 }
 
+double InterpolateLagrangePolynomial(double x, double xValues[], double yValues[], int size)
+{
+	double lagrangePol = 0;
+	double basicsPol;
+
+	for (int i = 0; i < size; i++)
+	{
+		basicsPol = 1;
+		
+		for (int j = 0; j < size; j++)
+		{
+			if (j == i) continue;
+			basicsPol *= (x - xValues[j]) / (xValues[i] - xValues[j]);
+		}
+		
+		lagrangePol += basicsPol * yValues[i];
+	}
+	
+	return lagrangePol;
+}
+
 void LoadScene(Scene *scene)
 {
 	if (SDL_Init(SDL_INIT_EVERYTHING) < 0)

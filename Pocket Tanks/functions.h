@@ -11,6 +11,7 @@
 LONGLONG StartCounter(double *);
 double GetCounter(ULONGLONG, double);
 double FRand(double, double);
+double InterpolateLagrangePolynomial(double, double [], double [], int);
 void LoadScene(Scene *);
 bool ProcessEvents(Scene *);
 void UpdateLogic(Scene *);
