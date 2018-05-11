@@ -18,8 +18,6 @@ void UpdateLogic(Scene *);
 void DoRender(Scene *);
 void DestroyScene(Scene *);
 void InitLandscape(Landscape *, int);
-//void InitLandscape2(Landscape2 **); //
-//void DevideQuadrant(Landscape2 **); //
 void Gravitate(Player[], Landscape);
 void DrawLandscape(SDL_Renderer *, Landscape);
 void InitPlayers(Player[]);

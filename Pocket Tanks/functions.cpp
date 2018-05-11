@@ -1,7 +1,5 @@
 #include "functions.h"
 
-#define DEBUG 1
-
 // Eric
 LONGLONG StartCounter(double *PCFreq)
 {
@@ -89,15 +87,12 @@ void LoadScene(Scene *scene)
 		exit(1);
 	}
 
-#if DEBUG 1
 	int landscapeType;
+	
 	printf_s("Landscape type: ");
 	scanf_s("%d", &landscapeType);
+	
 	InitLandscape(&scene->landscape, landscapeType);
-#else
-	InitLandscape(&scene->landscape, 1);
-#endif // DEBUG 1
-
 	InitPlayers((*scene).players);
 	InitTopPanels((*scene).topPanels);
 
@@ -244,6 +239,17 @@ void DestroyScene(Scene *scene)
 
 void InitLandscape(Landscape *landscape, int type)
 {
+	srand(time(NULL));
+
+	double xValues[5];
+	double yValues[5];
+
+	for (int i = 0, t = 0; i < 5; i++, t += SCREEN_WIDTH / 4)
+	{
+		xValues[i] = t;
+		yValues[i] = FRand(SCREEN_HEIGHT / 2 - 38, SCREEN_HEIGHT / 2 + 38);
+	}
+
 	for (int i = 0; i <= SCREEN_WIDTH; i++)
 	{
 		landscape->points[i].x = i;
@@ -257,7 +263,8 @@ void InitLandscape(Landscape *landscape, int type)
 			landscape->points[i].y = -0.00000000000028085715 * i * i * i + 0.00045657530219644915 * i * i - 0.58441598309786968457 * i + 389.09097264457795972703;
 			break;
 		case 3:
-			// Random
+			landscape->points[i].y = InterpolateLagrangePolynomial(i, xValues, yValues, 5);
+			break;
 		default:
 			landscape->points[i].y = SCREEN_HEIGHT / 2;
 			break;
@@ -265,109 +272,6 @@ void InitLandscape(Landscape *landscape, int type)
 
 	}
 }
-
-//void InitLandscape2(Landscape2 **landscape) //
-//{
-//	INT8 points[SCREEN_WIDTH + 1][SCREEN_HEIGHT + 1];
-//
-//	for (int i = 0; i <= SCREEN_WIDTH; i++)
-//	{
-//		for (int j = 0; j <= SCREEN_HEIGHT; j++)
-//		{
-//			if (0.00000058923110602294 * i * i * i - 0.00095600225436248687 * i * i + 0.36244377417817474907 * i + 314.64443045660573261557 <= j)
-//			{
-//				points[i][j] = 1;
-//			}
-//			else
-//			{
-//				points[i][j] = 0;
-//			}
-//		}
-//	}
-//	
-//	*landscape = (Landscape2 *)malloc(sizeof(Landscape2));
-//	(*landscape)->root = NULL;
-//	(*landscape)->type = 0;
-//	(*landscape)->rect.x = (*landscape)->rect.y = 0;
-//	(*landscape)->rect.w = SCREEN_WIDTH;
-//	(*landscape)->rect.h = SCREEN_HEIGHT;
-//	(*landscape)->quadrants[0] = (*landscape)->quadrants[1] = (*landscape)->quadrants[2] = (*landscape)->quadrants[3] = NULL;
-//
-//	Landscape2 *current = *landscape;
-//	INT8 andFlag = 1;
-//	INT8 orFlag = 0;
-//
-//	do
-//	{
-//		for (int i = current->rect.x; i < current->rect.x + current->rect.w; i++)
-//		{
-//			for (int j = current->rect.y; j < current->rect.y + current->rect.h; j++)
-//			{
-//				andFlag *= points[i][j];
-//
-//				if (points[i][j] == 1)
-//				{
-//					orFlag = points[i][j];
-//				}
-//			}
-//		}
-//
-//		if (orFlag == 1 && andFlag == 0)
-//		{
-//			if (current->rect.w / 2 != 0 && current->rect.h / 2 != 0)
-//			{
-//				DevideQuadrant(&current);
-//
-//				// ...
-//			}
-//			else
-//			{
-//				current->type = 1;
-//
-//				// ...
-//			}
-//		}
-//		else if (orFlag == 1 && andFlag == 1)
-//		{
-//			current->type = 1;
-//
-//			// ...
-//		}
-//		else
-//		{
-//			current->type = -1;
-//
-//			// ...
-//		}
-//
-//		// ...
-//	} while (current->root != NULL);
-//}
-
-//void DevideQuadrant(Landscape2 **landscape)
-//{
-//	for (int i = 0; i < 4; i++)
-//	{
-//		(*landscape)->quadrants[i] = (Landscape2 *)malloc(sizeof(Landscape2));
-//		(*landscape)->quadrants[i]->root = (*landscape);
-//		(*landscape)->quadrants[i]->type = 0;
-//		(*landscape)->quadrants[i]->rect.w = (*landscape)->rect.w / 2;
-//		(*landscape)->quadrants[i]->rect.h = (*landscape)->rect.h / 2;
-//		(*landscape)->quadrants[i]->quadrants[0] = (*landscape)->quadrants[i]->quadrants[1] = (*landscape)->quadrants[i]->quadrants[2] = (*landscape)->quadrants[i]->quadrants[3] = NULL;
-//	}
-//
-//	(*landscape)->quadrants[0]->rect.x = (*landscape)->rect.x;
-//	(*landscape)->quadrants[0]->rect.y = (*landscape)->rect.y;
-//
-//	(*landscape)->quadrants[1]->rect.x = (*landscape)->rect.x + (*landscape)->quadrants[1]->rect.w;
-//	(*landscape)->quadrants[1]->rect.y = (*landscape)->rect.y;
-//
-//	(*landscape)->quadrants[2]->rect.x = (*landscape)->rect.x;
-//	(*landscape)->quadrants[2]->rect.y = (*landscape)->rect.y + (*landscape)->quadrants[2]->rect.h;
-//
-//	(*landscape)->quadrants[3]->rect.x = (*landscape)->rect.x + (*landscape)->quadrants[3]->rect.w;
-//	(*landscape)->quadrants[3]->rect.y = (*landscape)->rect.y + (*landscape)->quadrants[3]->rect.h;
-//}
 
 void Gravitate(Player players[], Landscape landscape)
 {
