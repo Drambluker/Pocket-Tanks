@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdio.h>
+#include <time.h>
 #include <Windows.h>
 #include "SDL_image.h"
 #include "SDL_TTF.h"
@@ -9,12 +10,13 @@
 // Eric
 LONGLONG StartCounter(double *);
 double GetCounter(ULONGLONG, double);
+double FRand(double, double);
 void LoadScene(Scene *);
 bool ProcessEvents(Scene *);
 void UpdateLogic(Scene *);
 void DoRender(Scene *);
 void DestroyScene(Scene *);
-void InitLandscape(Landscape *);
+void InitLandscape(Landscape *, int);
 //void InitLandscape2(Landscape2 **); //
 //void DevideQuadrant(Landscape2 **); //
 void Gravitate(Player[], Landscape);

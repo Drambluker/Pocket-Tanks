@@ -1,5 +1,7 @@
 #include "functions.h"
 
+#define DEBUG 1
+
 // Eric
 LONGLONG StartCounter(double *PCFreq)
 {
@@ -15,6 +17,12 @@ double GetCounter(ULONGLONG CounterStart, double PCFreq)
 	LARGE_INTEGER li;
 	QueryPerformanceCounter(&li);
 	return (double)(li.QuadPart - CounterStart) / PCFreq;
+}
+
+double FRand(double min, double max)
+{
+	double f = (double)rand() / RAND_MAX;
+	return min + f * (max - min);
 }
 
 void LoadScene(Scene *scene)
@@ -60,7 +68,15 @@ void LoadScene(Scene *scene)
 		exit(1);
 	}
 
-	InitLandscape(&scene->landscape);
+#if DEBUG 1
+	int landscapeType;
+	printf_s("Landscape type: ");
+	scanf_s("%d", &landscapeType);
+	InitLandscape(&scene->landscape, landscapeType);
+#else
+	InitLandscape(&scene->landscape, 1);
+#endif // DEBUG 1
+
 	InitPlayers((*scene).players);
 	InitTopPanels((*scene).topPanels);
 
@@ -205,13 +221,27 @@ void DestroyScene(Scene *scene)
 	SDL_Quit();
 }
 
-void InitLandscape(Landscape *landscape)
+void InitLandscape(Landscape *landscape, int type)
 {
 	for (int i = 0; i <= SCREEN_WIDTH; i++)
 	{
 		landscape->points[i].x = i;
-		//landscape->points[i].y = SCREEN_HEIGHT / 2;
-		landscape->points[i].y = 0.00000058923110602294 * i * i * i - 0.00095600225436248687 * i * i + 0.36244377417817474907 * i + 314.64443045660573261557; // функция, описывающая форму ландшафта
+
+		switch (type)
+		{
+		case 1:
+			landscape->points[i].y = 0.00000058923110602294 * i * i * i - 0.00095600225436248687 * i * i + 0.36244377417817474907 * i + 314.64443045660573261557;
+			break;
+		case 2:
+			landscape->points[i].y = -0.00000000000028085715 * i * i * i + 0.00045657530219644915 * i * i - 0.58441598309786968457 * i + 389.09097264457795972703;
+			break;
+		case 3:
+			// Random
+		default:
+			landscape->points[i].y = SCREEN_HEIGHT / 2;
+			break;
+		}
+
 	}
 }
 
