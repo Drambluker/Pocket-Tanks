@@ -4,6 +4,12 @@
 #include "constants.h"
 
 // Eric
+struct RecordRow
+{
+	const char *name;
+	int score;
+};
+
 struct TankCannon
 {
 	SDL_Rect rect;

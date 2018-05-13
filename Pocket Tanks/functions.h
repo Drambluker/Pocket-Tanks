@@ -11,12 +11,14 @@
 LONGLONG StartCounter(double *);
 double GetCounter(ULONGLONG, double);
 double FRand(double, double);
-double InterpolateLagrangePolynomial(double, double [], double [], int);
+double InterpolateLagrangePolynomial(double, double[], double[], int);
 void LoadScene(Scene *);
 bool ProcessEvents(Scene *);
 void UpdateLogic(Scene *);
 void DoRender(Scene *);
 void DestroyScene(Scene *);
+void LoadRecords(RecordRow[5]); //
+void UpdateRecords(Player[]); //
 void InitLandscape(Landscape *, int);
 void Gravitate(Player[], Landscape);
 void DrawLandscape(SDL_Renderer *, Landscape);

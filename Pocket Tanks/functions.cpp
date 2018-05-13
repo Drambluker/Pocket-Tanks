@@ -1,5 +1,7 @@
 #include "functions.h"
 
+#define DEBUG 1
+
 // Eric
 LONGLONG StartCounter(double *PCFreq)
 {
@@ -31,16 +33,16 @@ double InterpolateLagrangePolynomial(double x, double xValues[], double yValues[
 	for (int i = 0; i < size; i++)
 	{
 		basicsPol = 1;
-		
+
 		for (int j = 0; j < size; j++)
 		{
 			if (j == i) continue;
 			basicsPol *= (x - xValues[j]) / (xValues[i] - xValues[j]);
 		}
-		
+
 		lagrangePol += basicsPol * yValues[i];
 	}
-	
+
 	return lagrangePol;
 }
 
@@ -88,10 +90,10 @@ void LoadScene(Scene *scene)
 	}
 
 	int landscapeType;
-	
+
 	printf_s("Landscape type: ");
 	scanf_s("%d", &landscapeType);
-	
+
 	InitLandscape(&scene->landscape, landscapeType);
 	InitPlayers((*scene).players);
 	InitTopPanels((*scene).topPanels);
@@ -235,6 +237,113 @@ void DestroyScene(Scene *scene)
 	TTF_CloseFont((*scene).font);
 	TTF_Quit();
 	SDL_Quit();
+}
+
+void LoadRecords(RecordRow records[5]) //
+{
+	FILE *recordsFile = NULL;
+	fopen_s(&recordsFile, "records.pt", "rb");
+
+	if (recordsFile == NULL)
+	{
+#if DEBUG == 1
+		printf_s("Try to create file...\n");
+#endif // DEBUG == 1
+		fopen_s(&recordsFile, "records.pt", "wb");
+
+		if (recordsFile == NULL)
+		{
+#if DEBUG == 1
+			printf_s("Error when create file!");
+			system("pause");
+#endif // DEBUG == 1
+			exit(1);
+		}
+
+		for (int i = 0; i < 5; i++)
+		{
+			records[i].name = "Empty";
+			records[i].score = 0;
+		}
+
+		fwrite(records, sizeof(RecordRow), 5, recordsFile);
+		fclose(recordsFile);
+
+		recordsFile = NULL;
+		fopen_s(&recordsFile, "records.pt", "rb");
+	}
+
+	fread(records, sizeof(RecordRow), 5, recordsFile);
+	fclose(recordsFile);
+	recordsFile = NULL;
+}
+
+void UpadteRecords(Player players[]) //
+{
+	RecordRow records[5];
+	LoadRecords(records);
+	int recordsIndex;
+
+	for (int i = 0; i < 2; i++)
+	{
+		recordsIndex = -1;
+
+		for (int j = 0; j < 5; j++)
+			if (players[i].score >= records[j].score)
+			{
+				recordsIndex = j;
+				break;
+			}
+
+		if (recordsIndex > -1)
+		{
+			for (int j = recordsIndex; j < 4; j++)
+				records[j + 1] = records[j];
+
+			records[recordsIndex].name = players[i].name;
+			records[recordsIndex].score = players[i].score;
+		}
+	}
+
+	//for (int i = 0; i < 5; i++)
+	//	if (players[0].score >= records[i].score)
+	//	{
+	//		recordsIndex = i;
+	//		break;
+	//	}
+
+	//if (recordsIndex > -1)
+	//{
+	//	for (int i = recordsIndex; i < 4; i++)
+	//		records[i + 1] = records[i];
+
+	//	records[recordsIndex].name = players[0].name;
+	//	records[recordsIndex].score = players[0].score;
+	//}
+
+	//recordsIndex = -1;
+
+	//for (int i = 0; i < 5; i++)
+	//	if (players[1].score >= records[i].score)
+	//	{
+	//		recordsIndex = i;
+	//		break;
+	//	}
+
+	//if (recordsIndex > -1)
+	//{
+	//	for (int i = recordsIndex; i < 4; i++)
+	//		records[i + 1] = records[i];
+
+	//	records[recordsIndex].name = players[1].name;
+	//	records[recordsIndex].score = players[1].score;
+	//}
+
+	FILE *recordsFile = NULL;
+	fopen_s(&recordsFile, "records.pt", "wb");
+	fwrite(records, sizeof(RecordRow), 5, recordsFile);
+	fclose(recordsFile);
+	recordsFile = NULL;
 }
 
 void InitLandscape(Landscape *landscape, int type)
@@ -525,7 +634,7 @@ void RenderWeapon(SDL_Renderer *renderer, Weapon *activeWeapon)
 		//activeWeapon->rect.x += 0.005 * activeWeapon->power * cos(activeWeapon->angle) * deltaTime;
 		//activeWeapon->rect.y += 0.005 * activeWeapon->power * sin(activeWeapon->angle) * deltaTime + activeWeapon->gravitatin * deltaTime;
 		//activeWeapon->gravitatin += 0.01;
-		
+
 		//if (GetTickCount() - *time > 10)
 		//{
 		//	*time = GetTickCount();
@@ -887,7 +996,7 @@ void BottomPanelInterations(Player players[], int Mouse_x, int Mouse_y, int Play
 	{
 		if (PlayerLap == 1)
 		{
-			if((players[PlayerLap - 1].tank.cannon.angle * (-1)) < 90) players[PlayerLap - 1].tank.cannon.angle--;
+			if ((players[PlayerLap - 1].tank.cannon.angle * (-1)) < 90) players[PlayerLap - 1].tank.cannon.angle--;
 		}
 		if (PlayerLap == 2)
 		{
@@ -911,6 +1020,6 @@ void BottomPanelInterations(Player players[], int Mouse_x, int Mouse_y, int Play
 	}
 	if ((Mouse_x >= Button3Right_rect.x && Mouse_x <= Button3Right_rect.x + Button3Right_rect.w) && (Mouse_y >= Button3Right_rect.y && Mouse_y <= Button3Right_rect.y + Button3Right_rect.h))
 	{
-		if(players[PlayerLap - 1].power < 100) players[PlayerLap - 1].power++; //
+		if (players[PlayerLap - 1].power < 100) players[PlayerLap - 1].power++; //
 	}
 }

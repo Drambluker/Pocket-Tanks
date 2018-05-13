@@ -7,7 +7,7 @@ int main(int argc, char** argv)
 	LoadScene(&scene);
 
 	bool quit = false;
-	
+
 	while (!quit)
 	{
 		quit = ProcessEvents(&scene);
