@@ -17,7 +17,7 @@ bool ProcessEvents(Scene *);
 void UpdateLogic(Scene *);
 void DoRender(Scene *);
 void DestroyScene(Scene *);
-void LoadRecords(RecordRow[5]); //
+void LoadRecords(RecordRow[NUMBER_OF_RECORD_ROWS]); //
 void UpdateRecords(Player[]); //
 void InitLandscape(Landscape *, int);
 void Gravitate(Player[], Landscape);

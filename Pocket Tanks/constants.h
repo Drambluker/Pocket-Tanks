@@ -8,3 +8,5 @@
 #define BODY_H 344
 #define CANNON_W 248
 #define CANNON_H 40
+
+#define NUMBER_OF_RECORD_ROWS 5

@@ -239,7 +239,7 @@ void DestroyScene(Scene *scene)
 	SDL_Quit();
 }
 
-void LoadRecords(RecordRow records[5]) //
+void LoadRecords(RecordRow records[NUMBER_OF_RECORD_ROWS]) //
 {
 	FILE *recordsFile = NULL;
 	fopen_s(&recordsFile, "records.pt", "rb");
@@ -260,27 +260,27 @@ void LoadRecords(RecordRow records[5]) //
 			exit(1);
 		}
 
-		for (int i = 0; i < 5; i++)
+		for (int i = 0; i < NUMBER_OF_RECORD_ROWS; i++)
 		{
 			records[i].name = "Empty";
 			records[i].score = 0;
 		}
 
-		fwrite(records, sizeof(RecordRow), 5, recordsFile);
+		fwrite(records, sizeof(RecordRow), NUMBER_OF_RECORD_ROWS, recordsFile);
 		fclose(recordsFile);
 
 		recordsFile = NULL;
 		fopen_s(&recordsFile, "records.pt", "rb");
 	}
 
-	fread(records, sizeof(RecordRow), 5, recordsFile);
+	fread(records, sizeof(RecordRow), NUMBER_OF_RECORD_ROWS, recordsFile);
 	fclose(recordsFile);
 	recordsFile = NULL;
 }
 
 void UpadteRecords(Player players[]) //
 {
-	RecordRow records[5];
+	RecordRow records[NUMBER_OF_RECORD_ROWS];
 	LoadRecords(records);
 	int recordsIndex;
 
@@ -288,7 +288,7 @@ void UpadteRecords(Player players[]) //
 	{
 		recordsIndex = -1;
 
-		for (int j = 0; j < 5; j++)
+		for (int j = 0; j < NUMBER_OF_RECORD_ROWS; j++)
 			if (players[i].score >= records[j].score)
 			{
 				recordsIndex = j;
@@ -297,7 +297,7 @@ void UpadteRecords(Player players[]) //
 
 		if (recordsIndex > -1)
 		{
-			for (int j = recordsIndex; j < 4; j++)
+			for (int j = recordsIndex; j < NUMBER_OF_RECORD_ROWS - 1; j++)
 				records[j + 1] = records[j];
 
 			records[recordsIndex].name = players[i].name;
@@ -305,7 +305,7 @@ void UpadteRecords(Player players[]) //
 		}
 	}
 
-	//for (int i = 0; i < 5; i++)
+	//for (int i = 0; i < NUMBER_OF_RECORD_ROWS; i++)
 	//	if (players[0].score >= records[i].score)
 	//	{
 	//		recordsIndex = i;
@@ -314,7 +314,7 @@ void UpadteRecords(Player players[]) //
 
 	//if (recordsIndex > -1)
 	//{
-	//	for (int i = recordsIndex; i < 4; i++)
+	//	for (int i = recordsIndex; i < NUMBER_OF_RECORD_ROWS - 1; i++)
 	//		records[i + 1] = records[i];
 
 	//	records[recordsIndex].name = players[0].name;
@@ -323,7 +323,7 @@ void UpadteRecords(Player players[]) //
 
 	//recordsIndex = -1;
 
-	//for (int i = 0; i < 5; i++)
+	//for (int i = 0; i < NUMBER_OF_RECORD_ROWS; i++)
 	//	if (players[1].score >= records[i].score)
 	//	{
 	//		recordsIndex = i;
@@ -332,7 +332,7 @@ void UpadteRecords(Player players[]) //
 
 	//if (recordsIndex > -1)
 	//{
-	//	for (int i = recordsIndex; i < 4; i++)
+	//	for (int i = recordsIndex; i < NUMBER_OF_RECORD_ROWS - 1; i++)
 	//		records[i + 1] = records[i];
 
 	//	records[recordsIndex].name = players[1].name;
@@ -341,7 +341,7 @@ void UpadteRecords(Player players[]) //
 
 	FILE *recordsFile = NULL;
 	fopen_s(&recordsFile, "records.pt", "wb");
-	fwrite(records, sizeof(RecordRow), 5, recordsFile);
+	fwrite(records, sizeof(RecordRow), NUMBER_OF_RECORD_ROWS, recordsFile);
 	fclose(recordsFile);
 	recordsFile = NULL;
 }
