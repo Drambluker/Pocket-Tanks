@@ -214,6 +214,8 @@ void DoRender(Scene *scene)
 
 void DestroyScene(Scene *scene)
 {
+	UpdateRecords(scene->players);
+
 	Weapon *tempWeapon = NULL;
 
 	for (int i = 0; i < 2; i++)
