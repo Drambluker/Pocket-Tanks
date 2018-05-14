@@ -278,7 +278,7 @@ void LoadRecords(RecordRow records[NUMBER_OF_RECORD_ROWS]) //
 	recordsFile = NULL;
 }
 
-void UpadteRecords(Player players[]) //
+void UpdateRecords(Player players[]) //
 {
 	RecordRow records[NUMBER_OF_RECORD_ROWS];
 	LoadRecords(records);
