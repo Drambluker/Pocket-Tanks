@@ -180,7 +180,27 @@ void UpdateLogic(Scene *scene)
 	}
 
 	if ((*scene).activeWeapon != NULL && ((*scene).activeWeapon->rect.y >= (*scene).landscape.points[(*scene).activeWeapon->rect.x].y || GotInTheTank((*scene).activeWeapon, (*scene).players[((*scene).playerLap == 2) ? 1 : 0])))
-	{
+	{		
+		if (!GotInTheTank((*scene).activeWeapon, (*scene).players[((*scene).playerLap == 2) ? 1 : 0]))
+		{
+			SDL_Point depth—oordinate = { scene->activeWeapon->rect.x, scene->activeWeapon->rect.y }; //
+			
+			if (scene->activeWeapon->name == "Chinese Wall")
+				for (int i = depth—oordinate.x; i < depth—oordinate.x + 8; i++)
+					scene->landscape.points[i].y -= 300;
+			else
+			{
+				double t = 0;
+				for (int i = depth—oordinate.x - scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE; i <= depth—oordinate.x + scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE; i++)
+				{
+					if (scene->landscape.points[i].y <= depth—oordinate.y)
+						scene->landscape.points[i].y += scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE * sin(t);
+
+					t += Pi / (2 * scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE + 1);
+				}
+			}
+		}
+
 		SDL_DestroyTexture((*scene).activeWeapon->texture);
 		(*scene).activeWeapon->texture = NULL;
 		free((*scene).activeWeapon);
@@ -442,20 +462,20 @@ void InitPlayers(Player players[])
 		players[i].headWeapon = NULL;
 		players[i].tailWeapon = NULL;
 		weapon = (Weapon *)malloc(sizeof(Weapon));
-		weapon->name = "Weapon 1";
+		weapon->name = "Lolly Bomb";
 		weapon->score = 1;
 		weapon->angle = 0;
 		weapon->gravitatin = 0;
 		PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
 		weapon = (Weapon *)malloc(sizeof(Weapon));
-		weapon->name = "Weapon 2";
+		weapon->name = "Lolly Bomb 2.0";
 		weapon->score = 2;
 		weapon->angle = 0;
 		weapon->gravitatin = 0;
 		PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
 		weapon = (Weapon *)malloc(sizeof(Weapon));
-		weapon->name = "Weapon 3";
-		weapon->score = 3;
+		weapon->name = "Chinese Wall";
+		weapon->score = 0;
 		weapon->angle = 0;
 		weapon->gravitatin = 0;
 		PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);

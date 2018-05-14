@@ -14,11 +14,11 @@ double FRand(double, double);
 double InterpolateLagrangePolynomial(double, double[], double[], int);
 void LoadScene(Scene *);
 bool ProcessEvents(Scene *);
-void UpdateLogic(Scene *);
+void UpdateLogic(Scene *); //
 void DoRender(Scene *);
 void DestroyScene(Scene *);
-void LoadRecords(RecordRow[NUMBER_OF_RECORD_ROWS]); //
-void UpdateRecords(Player[]); //
+void LoadRecords(RecordRow[NUMBER_OF_RECORD_ROWS]);
+void UpdateRecords(Player[]);
 void InitLandscape(Landscape *, int);
 void Gravitate(Player[], Landscape);
 void DrawLandscape(SDL_Renderer *, Landscape);
