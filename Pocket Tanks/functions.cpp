@@ -1,7 +1,5 @@
 #include "functions.h"
 
-#define DEBUG 1
-
 // Eric
 LONGLONG StartCounter(double *PCFreq)
 {
@@ -246,17 +244,13 @@ void LoadRecords(RecordRow records[NUMBER_OF_RECORD_ROWS]) //
 
 	if (recordsFile == NULL)
 	{
-#if DEBUG == 1
 		printf_s("Try to create file...\n");
-#endif // DEBUG == 1
 		fopen_s(&recordsFile, "records.pt", "wb");
 
 		if (recordsFile == NULL)
 		{
-#if DEBUG == 1
 			printf_s("Error when create file!");
 			system("pause");
-#endif // DEBUG == 1
 			exit(1);
 		}
 
