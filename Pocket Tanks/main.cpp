@@ -19,7 +19,6 @@ int main(int argc, char** argv)
 		DoRender(&scene);
 	}
 
-	UpdateRecords(scene.players);
 	DestroyScene(&scene);
 
 	return 0;
