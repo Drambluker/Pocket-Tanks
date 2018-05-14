@@ -74,7 +74,7 @@ struct Scene
 	Weapon *activeWeapon;
 	double oldTime, newTime, deltaTime, PCFreq;
 	LONGLONG timeStart;
-	Landscape landscape;
+	Landscape landscape, defaultLandscape;
 	Player players[2];
 	PlayerTopPanel topPanels[2];
 };

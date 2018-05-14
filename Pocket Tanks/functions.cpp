@@ -92,7 +92,7 @@ void LoadScene(Scene *scene)
 	printf_s("Landscape type: ");
 	scanf_s("%d", &landscapeType);
 
-	InitLandscape(&scene->landscape, landscapeType);
+	InitLandscape(&scene->landscape, &scene->defaultLandscape, landscapeType);
 	InitPlayers((*scene).players);
 	InitTopPanels((*scene).topPanels);
 
@@ -186,14 +186,14 @@ void UpdateLogic(Scene *scene)
 			SDL_Point depth—oordinate = { scene->activeWeapon->rect.x, scene->activeWeapon->rect.y }; //
 			
 			if (scene->activeWeapon->name == "Chinese Wall")
-				for (int i = depth—oordinate.x; i < depth—oordinate.x + 8; i++)
+				for (int i = depth—oordinate.x; i < depth—oordinate.x + 10; i++)
 					scene->landscape.points[i].y -= 300;
 			else
 			{
 				double t = 0;
 				for (int i = depth—oordinate.x - scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE; i <= depth—oordinate.x + scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE; i++)
 				{
-					if (scene->landscape.points[i].y <= depth—oordinate.y)
+					if (scene->landscape.points[depth—oordinate.x].y >= scene->defaultLandscape.points[depth—oordinate.x].y || scene->landscape.points[i].y <= depth—oordinate.y)
 						scene->landscape.points[i].y += scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE * sin(t);
 
 					t += Pi / (2 * scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE + 1);
@@ -362,7 +362,7 @@ void UpdateRecords(Player players[]) //
 	recordsFile = NULL;
 }
 
-void InitLandscape(Landscape *landscape, int type)
+void InitLandscape(Landscape *landscape, Landscape *defaultLandscape, int type)
 {
 	srand(time(NULL));
 
@@ -377,21 +377,21 @@ void InitLandscape(Landscape *landscape, int type)
 
 	for (int i = 0; i <= SCREEN_WIDTH; i++)
 	{
-		landscape->points[i].x = i;
+		landscape->points[i].x = defaultLandscape->points[i].x = i;
 
 		switch (type)
 		{
 		case 1:
-			landscape->points[i].y = 0.00000058923110602294 * i * i * i - 0.00095600225436248687 * i * i + 0.36244377417817474907 * i + 314.64443045660573261557;
+			landscape->points[i].y = defaultLandscape->points[i].y = 0.00000058923110602294 * i * i * i - 0.00095600225436248687 * i * i + 0.36244377417817474907 * i + 314.64443045660573261557;
 			break;
 		case 2:
-			landscape->points[i].y = -0.00000000000028085715 * i * i * i + 0.00045657530219644915 * i * i - 0.58441598309786968457 * i + 389.09097264457795972703;
+			landscape->points[i].y = defaultLandscape->points[i].y = -0.00000000000028085715 * i * i * i + 0.00045657530219644915 * i * i - 0.58441598309786968457 * i + 389.09097264457795972703;
 			break;
 		case 3:
-			landscape->points[i].y = InterpolateLagrangePolynomial(i, xValues, yValues, 5);
+			landscape->points[i].y = defaultLandscape->points[i].y = InterpolateLagrangePolynomial(i, xValues, yValues, 5);
 			break;
 		default:
-			landscape->points[i].y = SCREEN_HEIGHT / 2;
+			landscape->points[i].y = defaultLandscape->points[i].y = SCREEN_HEIGHT / 2;
 			break;
 		}
 

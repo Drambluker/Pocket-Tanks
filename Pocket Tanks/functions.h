@@ -19,7 +19,7 @@ void DoRender(Scene *);
 void DestroyScene(Scene *);
 void LoadRecords(RecordRow[NUMBER_OF_RECORD_ROWS]);
 void UpdateRecords(Player[]);
-void InitLandscape(Landscape *, int);
+void InitLandscape(Landscape *, Landscape *, int);
 void Gravitate(Player[], Landscape);
 void DrawLandscape(SDL_Renderer *, Landscape);
 void InitPlayers(Player[]);
