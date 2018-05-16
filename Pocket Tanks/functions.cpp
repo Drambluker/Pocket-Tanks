@@ -179,9 +179,9 @@ void UpdateLogic(Scene *scene)
 		(*scene).players[((*scene).playerLap == 2) ? 0 : 1].score += (*scene).activeWeapon->score;
 	}
 
-	if ((*scene).activeWeapon != NULL && ((*scene).activeWeapon->rect.y >= (*scene).landscape.points[(*scene).activeWeapon->rect.x].y || GotInTheTank((*scene).activeWeapon, (*scene).players[((*scene).playerLap == 2) ? 1 : 0])))
+	if ((*scene).activeWeapon != NULL && ((*scene).activeWeapon->rect.y >= (*scene).landscape.points[(*scene).activeWeapon->rect.x].y || GotInTheTank((*scene).activeWeapon, (*scene).players[((*scene).playerLap == 2) ? 1 : 0]) || scene->activeWeapon->rect.x <= 0 || scene->activeWeapon->rect.x >= SCREEN_WIDTH))
 	{		
-		if (!GotInTheTank((*scene).activeWeapon, (*scene).players[((*scene).playerLap == 2) ? 1 : 0]))
+		if (!(GotInTheTank((*scene).activeWeapon, (*scene).players[((*scene).playerLap == 2) ? 1 : 0]) || scene->activeWeapon->rect.x <= 0 || scene->activeWeapon->rect.x >= SCREEN_WIDTH))
 		{
 			SDL_Point depthÑoordinate = { scene->activeWeapon->rect.x, scene->activeWeapon->rect.y }; //
 			
@@ -313,7 +313,7 @@ void UpdateRecords(Player players[]) //
 
 		if (recordsIndex > -1)
 		{
-			for (int j = recordsIndex; j < NUMBER_OF_RECORD_ROWS - 1; j++)
+			for (int j = NUMBER_OF_RECORD_ROWS - 2; j >= recordsIndex; j--)
 				records[j + 1] = records[j];
 
 			records[recordsIndex].name = players[i].name;
