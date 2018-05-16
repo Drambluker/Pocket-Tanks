@@ -60,6 +60,11 @@ void LoadScene(Scene *scene)
 		exit(1);
 	}
 
+	int landscapeType;
+
+	printf_s("Landscape type: ");
+	scanf_s("%d", &landscapeType);
+
 	(*scene).window = SDL_CreateWindow("Pocket Tanks", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
 
 	if (!(*scene).window)
@@ -86,11 +91,6 @@ void LoadScene(Scene *scene)
 		system("pause");
 		exit(1);
 	}
-
-	int landscapeType;
-
-	printf_s("Landscape type: ");
-	scanf_s("%d", &landscapeType);
 
 	InitLandscape(&scene->landscape, &scene->defaultLandscape, landscapeType);
 	InitPlayers((*scene).players);
@@ -180,17 +180,23 @@ void UpdateLogic(Scene *scene)
 	}
 
 	if ((*scene).activeWeapon != NULL && ((*scene).activeWeapon->rect.y >= (*scene).landscape.points[(*scene).activeWeapon->rect.x].y || GotInTheTank((*scene).activeWeapon, (*scene).players[((*scene).playerLap == 2) ? 1 : 0]) || scene->activeWeapon->rect.x <= 0 || scene->activeWeapon->rect.x >= SCREEN_WIDTH))
-	{		
+	{
 		if (!(GotInTheTank((*scene).activeWeapon, (*scene).players[((*scene).playerLap == 2) ? 1 : 0]) || scene->activeWeapon->rect.x <= 0 || scene->activeWeapon->rect.x >= SCREEN_WIDTH))
 		{
 			SDL_Point depth—oordinate = { scene->activeWeapon->rect.x, scene->activeWeapon->rect.y }; //
-			
+
 			if (scene->activeWeapon->name == "Chinese Wall")
-				for (int i = depth—oordinate.x; i < depth—oordinate.x + 10; i++)
+				for (int i = depth—oordinate.x - 5; i < depth—oordinate.x + 5; i++)
 					scene->landscape.points[i].y -= 300;
+			else if (scene->activeWeapon->name == "Ravine")
+			{
+				for (int i = depth—oordinate.x - 50; i < depth—oordinate.x + 50; i++)
+					scene->landscape.points[i].y += 100;
+			}
 			else
 			{
 				double t = 0;
+
 				for (int i = depth—oordinate.x - scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE; i <= depth—oordinate.x + scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE; i++)
 				{
 					if (scene->landscape.points[depth—oordinate.x].y >= scene->defaultLandscape.points[depth—oordinate.x].y || scene->landscape.points[i].y <= depth—oordinate.y)
@@ -461,24 +467,62 @@ void InitPlayers(Player players[])
 		players[i].tank.angle = 0;
 		players[i].headWeapon = NULL;
 		players[i].tailWeapon = NULL;
-		weapon = (Weapon *)malloc(sizeof(Weapon));
-		weapon->name = "Lolly Bomb";
-		weapon->score = 1;
-		weapon->angle = 0;
-		weapon->gravitatin = 0;
-		PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
-		weapon = (Weapon *)malloc(sizeof(Weapon));
-		weapon->name = "Lolly Bomb 2.0";
-		weapon->score = 2;
-		weapon->angle = 0;
-		weapon->gravitatin = 0;
-		PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
-		weapon = (Weapon *)malloc(sizeof(Weapon));
-		weapon->name = "Chinese Wall";
-		weapon->score = 0;
-		weapon->angle = 0;
-		weapon->gravitatin = 0;
-		PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
+
+		for (int j = 1; j <= NUMBER_OF_WEAPON; j++)
+		{
+			weapon = (Weapon *)malloc(sizeof(Weapon));
+
+			switch (j)
+			{
+			case 1:
+				weapon->name = "Lolly Bomb";
+				weapon->score = 1;
+				break;
+			case 2:
+				weapon->name = "Lolly Bomb 2.0";
+				weapon->score = 2;
+				break;
+			case 3:
+				weapon->name = "Chinese Wall";
+				weapon->score = 0;
+				break;
+			case 4:
+				weapon->name = "Ravine";
+				weapon->score = 0;
+				break;
+			default:
+				break;
+			}
+
+			weapon->angle = 0;
+			weapon->gravitatin = 0;
+			PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
+		}
+
+		//weapon = (Weapon *)malloc(sizeof(Weapon));
+		//weapon->name = "Lolly Bomb";
+		//weapon->score = 1;
+		//weapon->angle = 0;
+		//weapon->gravitatin = 0;
+		//PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
+		//weapon = (Weapon *)malloc(sizeof(Weapon));
+		//weapon->name = "Lolly Bomb 2.0";
+		//weapon->score = 2;
+		//weapon->angle = 0;
+		//weapon->gravitatin = 0;
+		//PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
+		//weapon = (Weapon *)malloc(sizeof(Weapon));
+		//weapon->name = "Chinese Wall";
+		//weapon->score = 0;
+		//weapon->angle = 0;
+		//weapon->gravitatin = 0;
+		//PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
+		//weapon = (Weapon *)malloc(sizeof(Weapon));
+		//weapon->name = "Ravine";
+		//weapon->score = 0;
+		//weapon->angle = 0;
+		//weapon->gravitatin = 0;
+		//PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
 	}
 
 	// Player 1
@@ -580,20 +624,32 @@ void LoadTextures(SDL_Renderer *renderer, Player players[])
 
 	for (int i = 0; i < 2; i++)
 	{
-		// Weapon 1
-		weapon = PopWeapon(&players[i].headWeapon);
-		weapon->texture = LoadTexture(renderer, "Sprites/weapon1.bmp");
-		PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
+		for (int j = 0; j < NUMBER_OF_WEAPON; j++)
+		{
+			weapon = PopWeapon(&players[i].headWeapon);
+			weapon->texture = LoadTexture(renderer, "Sprites/weapon1.bmp");
+			PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
+		}
 
-		// Weapon 2
-		weapon = PopWeapon(&players[i].headWeapon);
-		weapon->texture = LoadTexture(renderer, "Sprites/weapon1.bmp");
-		PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
+		//// Lolly Bomb
+		//weapon = PopWeapon(&players[i].headWeapon);
+		//weapon->texture = LoadTexture(renderer, "Sprites/weapon1.bmp");
+		//PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
 
-		// Weapon 3
-		weapon = PopWeapon(&players[i].headWeapon);
-		weapon->texture = LoadTexture(renderer, "Sprites/weapon1.bmp");
-		PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
+		//// Lolly Bomb 2.0
+		//weapon = PopWeapon(&players[i].headWeapon);
+		//weapon->texture = LoadTexture(renderer, "Sprites/weapon1.bmp");
+		//PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
+
+		//// Chinese Wall
+		//weapon = PopWeapon(&players[i].headWeapon);
+		//weapon->texture = LoadTexture(renderer, "Sprites/weapon1.bmp");
+		//PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
+
+		//// Ravine
+		//weapon = PopWeapon(&players[i].headWeapon);
+		//weapon->texture = LoadTexture(renderer, "Sprites/weapon1.bmp");
+		//PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
 	}
 }
 
