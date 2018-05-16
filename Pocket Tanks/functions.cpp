@@ -133,12 +133,12 @@ bool ProcessEvents(Scene *scene)
 
 		// if sizechanged - mustRedraw = true;
 
-		if ((*scene).event.type == SDL_KEYDOWN && (*scene).event.key.keysym.sym == SDLK_LEFT)
+		if ((*scene).event.type == SDL_KEYDOWN && (*scene).event.key.keysym.sym == SDLK_LEFT && (*scene).players[(*scene).playerLap - 1].tank.body.rect.x > 0)
 		{
 			(*scene).players[(*scene).playerLap - 1].tank.body.rect.x -= 0.03 * (*scene).deltaTime;
 		}
 
-		if ((*scene).event.type == SDL_KEYDOWN && (*scene).event.key.keysym.sym == SDLK_RIGHT)
+		if ((*scene).event.type == SDL_KEYDOWN && (*scene).event.key.keysym.sym == SDLK_RIGHT && (*scene).players[(*scene).playerLap - 1].tank.body.rect.x + (*scene).players[(*scene).playerLap - 1].tank.body.rect.w * cos((*scene).players[(*scene).playerLap - 1].tank.angle * Pi / 180) < SCREEN_WIDTH)
 		{
 			(*scene).players[(*scene).playerLap - 1].tank.body.rect.x += 0.06 * (*scene).deltaTime;
 		}
@@ -165,12 +165,19 @@ void UpdateLogic(Scene *scene)
 	SDL_SetRenderDrawColor((*scene).renderer, 160, 200, 160, 0);
 	SDL_RenderClear((*scene).renderer);
 
-	(*scene).players[0].tank.angle = 180 / Pi * atan((double)((*scene).landscape.points[(*scene).players[0].tank.body.rect.x + (*scene).players[0].tank.body.rect.w].y -
-		(*scene).landscape.points[(*scene).players[0].tank.body.rect.x].y) / ((*scene).landscape.points[(*scene).players[0].tank.body.rect.x + (*scene).players[0].tank.body.rect.w].x -
-		(*scene).landscape.points[(*scene).players[0].tank.body.rect.x].x));
-	(*scene).players[1].tank.angle = 180 / Pi * atan((double)((*scene).landscape.points[(*scene).players[1].tank.body.rect.x + (*scene).players[1].tank.body.rect.w].y -
-		(*scene).landscape.points[(*scene).players[1].tank.body.rect.x].y) / ((*scene).landscape.points[(*scene).players[1].tank.body.rect.x + (*scene).players[1].tank.body.rect.w].x -
-		(*scene).landscape.points[(*scene).players[1].tank.body.rect.x].x));
+	if ((*scene).players[0].tank.body.rect.x + (*scene).players[0].tank.body.rect.w < SCREEN_WIDTH)
+	{
+		(*scene).players[0].tank.angle = 180 / Pi * atan((double)((*scene).landscape.points[(*scene).players[0].tank.body.rect.x + (*scene).players[0].tank.body.rect.w].y -
+			(*scene).landscape.points[(*scene).players[0].tank.body.rect.x].y) / ((*scene).landscape.points[(*scene).players[0].tank.body.rect.x + (*scene).players[0].tank.body.rect.w].x -
+			(*scene).landscape.points[(*scene).players[0].tank.body.rect.x].x));
+	}
+
+	if ((*scene).players[1].tank.body.rect.x + (*scene).players[1].tank.body.rect.w < SCREEN_WIDTH)
+	{
+		(*scene).players[1].tank.angle = 180 / Pi * atan((double)((*scene).landscape.points[(*scene).players[1].tank.body.rect.x + (*scene).players[1].tank.body.rect.w].y -
+			(*scene).landscape.points[(*scene).players[1].tank.body.rect.x].y) / ((*scene).landscape.points[(*scene).players[1].tank.body.rect.x + (*scene).players[1].tank.body.rect.w].x -
+			(*scene).landscape.points[(*scene).players[1].tank.body.rect.x].x));
+	}
 
 	Gravitate((*scene).players, (*scene).landscape);
 
@@ -179,9 +186,18 @@ void UpdateLogic(Scene *scene)
 		(*scene).players[((*scene).playerLap == 2) ? 0 : 1].score += (*scene).activeWeapon->score;
 	}
 
-	if ((*scene).activeWeapon != NULL && ((*scene).activeWeapon->rect.y >= (*scene).landscape.points[(*scene).activeWeapon->rect.x].y || GotInTheTank((*scene).activeWeapon, (*scene).players[((*scene).playerLap == 2) ? 1 : 0]) || scene->activeWeapon->rect.x <= 0 || scene->activeWeapon->rect.x >= SCREEN_WIDTH))
+	if ((*scene).activeWeapon != NULL && ((*scene).activeWeapon->rect.y >= (*scene).landscape.points[(*scene).activeWeapon->rect.x].y ||
+		GotInTheTank((*scene).activeWeapon, (*scene).players[((*scene).playerLap == 2) ? 1 : 0]) ||
+		scene->activeWeapon->rect.x <= 0 ||
+		scene->activeWeapon->rect.x >= SCREEN_WIDTH ||
+		(scene->activeWeapon->rect.y <= 0 && scene->activeWeapon->name == "Laser") ||
+		scene->activeWeapon->rect.y >= SCREEN_HEIGHT)) //
 	{
-		if (!(GotInTheTank((*scene).activeWeapon, (*scene).players[((*scene).playerLap == 2) ? 1 : 0]) || scene->activeWeapon->rect.x <= 0 || scene->activeWeapon->rect.x >= SCREEN_WIDTH))
+		if (!(GotInTheTank((*scene).activeWeapon, (*scene).players[((*scene).playerLap == 2) ? 1 : 0]) ||
+			scene->activeWeapon->rect.x <= 0 ||
+			scene->activeWeapon->rect.x >= SCREEN_WIDTH ||
+			(scene->activeWeapon->rect.y <= 0 && scene->activeWeapon->name == "Laser") ||
+			scene->activeWeapon->rect.y >= SCREEN_HEIGHT))
 		{
 			SDL_Point depth—oordinate = { scene->activeWeapon->rect.x, scene->activeWeapon->rect.y }; //
 
@@ -193,7 +209,7 @@ void UpdateLogic(Scene *scene)
 				for (int i = depth—oordinate.x - 50; i < depth—oordinate.x + 50; i++)
 					scene->landscape.points[i].y += 100;
 			}
-			else
+			else if (scene->activeWeapon->name != "Laser")
 			{
 				double t = 0;
 
@@ -216,16 +232,23 @@ void UpdateLogic(Scene *scene)
 
 void DoRender(Scene *scene)
 {
+	RenderWeapon((*scene).renderer, (*scene).activeWeapon);
 	DrawLandscape((*scene).renderer, (*scene).landscape);
 	DrawTanks((*scene).renderer, (*scene).players);
-
-	RenderWeapon((*scene).renderer, (*scene).activeWeapon);
 
 	if ((*scene).activeWeapon != NULL && (*scene).activeWeapon->rect.y < (*scene).landscape.points[(*scene).activeWeapon->rect.x].y)
 	{
 		(*scene).activeWeapon->rect.x += 0.005 * (*scene).players[((*scene).playerLap == 2) ? 0 : 1].power * cos((*scene).activeWeapon->angle) * (*scene).deltaTime;
-		(*scene).activeWeapon->rect.y += 0.005 * (*scene).players[((*scene).playerLap == 2) ? 0 : 1].power * sin((*scene).activeWeapon->angle) * (*scene).deltaTime + (*scene).activeWeapon->gravitatin * (*scene).deltaTime;
-		(*scene).activeWeapon->gravitatin += 0.0025;
+
+		if (scene->activeWeapon->name == "Laser")
+		{
+			(*scene).activeWeapon->rect.y += 0.005 * (*scene).players[((*scene).playerLap == 2) ? 0 : 1].power * sin((*scene).activeWeapon->angle) * (*scene).deltaTime;
+		}
+		else
+		{
+			(*scene).activeWeapon->rect.y += 0.005 * (*scene).players[((*scene).playerLap == 2) ? 0 : 1].power * sin((*scene).activeWeapon->angle) * (*scene).deltaTime + (*scene).activeWeapon->gravitatin * (*scene).deltaTime;
+			(*scene).activeWeapon->gravitatin += 0.0025;
+		}
 	}
 
 	CreateAndDrawTopPanels((*scene).renderer, (*scene).font, (*scene).players, (*scene).topPanels);
@@ -265,7 +288,7 @@ void DestroyScene(Scene *scene)
 	SDL_Quit();
 }
 
-void LoadRecords(RecordRow records[NUMBER_OF_RECORD_ROWS]) //
+void LoadRecords(RecordRow records[NUMBER_OF_RECORD_ROWS])
 {
 	FILE *recordsFile = NULL;
 	fopen_s(&recordsFile, "records.pt", "rb");
@@ -300,7 +323,7 @@ void LoadRecords(RecordRow records[NUMBER_OF_RECORD_ROWS]) //
 	recordsFile = NULL;
 }
 
-void UpdateRecords(Player players[]) //
+void UpdateRecords(Player players[])
 {
 	RecordRow records[NUMBER_OF_RECORD_ROWS];
 	LoadRecords(records);
@@ -490,6 +513,10 @@ void InitPlayers(Player players[])
 				weapon->name = "Ravine";
 				weapon->score = 0;
 				break;
+			case 5:
+				weapon->name = "Laser";
+				weapon->score = 5;
+				break;
 			default:
 				break;
 			}
@@ -564,7 +591,6 @@ void DrawTanks(SDL_Renderer *renderer, Player players[])
 			-2 + players[0].tank.cannon.rect.y - (int)(players[0].tank.cannon.rect.w * sin(2 * Pi - players[0].tank.cannon.angle * Pi / 180)),
 			7, 7 };
 		players[0].headWeapon->angle = players[0].tank.cannon.angle * Pi / 180;
-		//SDL_RenderCopy(renderer, players[0].headWeapon->texture, NULL, &players[0].headWeapon->rect);
 	}
 
 	pointOfRotation = { 0, players[0].tank.body.rect.h };
@@ -596,7 +622,6 @@ void DrawTanks(SDL_Renderer *renderer, Player players[])
 			-2 + players[1].tank.cannon.rect.y - (int)(players[1].tank.cannon.rect.w * sin(players[1].tank.cannon.angle * Pi / 180)),
 			7, 7 };
 		players[1].headWeapon->angle = Pi + players[1].tank.cannon.angle * Pi / 180;
-		//SDL_RenderCopy(renderer, players[1].headWeapon->texture, NULL, &players[1].headWeapon->rect);
 	}
 
 	pointOfRotation = { 0, players[1].tank.body.rect.h };
@@ -698,7 +723,17 @@ void RenderWeapon(SDL_Renderer *renderer, Weapon *activeWeapon)
 {
 	if (activeWeapon != NULL)
 	{
-		activeWeapon->rect.w = activeWeapon->rect.h = 7;
+		if (activeWeapon->name == "Laser")
+		{
+			SDL_Point pointOfRotation = { 0, 0 };
+			activeWeapon->rect.h = 7;
+			activeWeapon->rect.w = 7 * activeWeapon->rect.h;
+			SDL_RenderCopyEx(renderer, activeWeapon->texture, NULL, &activeWeapon->rect, activeWeapon->angle * 180 / Pi, &pointOfRotation, SDL_FLIP_NONE);
+			return;
+		}
+		else
+			activeWeapon->rect.w = activeWeapon->rect.h = 7;
+
 		SDL_RenderCopy(renderer, activeWeapon->texture, NULL, &activeWeapon->rect);
 
 		//double deltaTime = GetCounter(timeStart, PCFreq) - *oldTime;
