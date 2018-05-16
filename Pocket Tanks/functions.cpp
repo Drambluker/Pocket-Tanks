@@ -207,7 +207,7 @@ void UpdateLogic(Scene *scene)
 			else if (scene->activeWeapon->name == "Ravine")
 			{
 				for (int i = depth—oordinate.x - 50; i < depth—oordinate.x + 50; i++)
-					scene->landscape.points[i].y += 100;
+					scene->landscape.points[i].y += 0.8 * SCREEN_HEIGHT - scene->landscape.points[i].y;
 			}
 			else if (scene->activeWeapon->name != "Laser")
 			{
@@ -478,7 +478,7 @@ void DrawLandscape(SDL_Renderer *renderer, Landscape landscape)
 
 void InitPlayers(Player players[])
 {
-	Weapon *weapon;
+	Weapon *weapon = NULL;
 
 	for (int i = 0; i < 2; i++)
 	{
@@ -547,6 +547,11 @@ void InitPlayers(Player players[])
 		//weapon = (Weapon *)malloc(sizeof(Weapon));
 		//weapon->name = "Ravine";
 		//weapon->score = 0;
+		//weapon->angle = 0;
+		//weapon->gravitatin = 0;
+		//PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
+		//weapon->name = "Laser";
+		//weapon->score = 5;
 		//weapon->angle = 0;
 		//weapon->gravitatin = 0;
 		//PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
@@ -782,6 +787,8 @@ Weapon * PopWeapon(Weapon **headWeapons)
 			tempWeapon = *headWeapons;
 			*headWeapons = (*headWeapons)->next;
 			(*headWeapons)->prev = tempWeapon->prev;
+
+			if ((*headWeapons)->prev != NULL) (*headWeapons)->prev->next = *headWeapons;
 		}
 		else
 		{
