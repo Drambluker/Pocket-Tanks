@@ -6,7 +6,7 @@
 // Eric
 struct RecordRow
 {
-	const char *name;
+	char name[NAME_LENGTH];
 	int score;
 };
 
@@ -32,7 +32,7 @@ struct Tank
 
 struct Weapon
 {
-	const char *name;
+	char name[NAME_LENGTH];
 	int score;
 	double angle;
 	double gravitatin;
@@ -44,7 +44,7 @@ struct Weapon
 
 struct Player
 {
-	const char *name;
+	char name[NAME_LENGTH];
 	int score;
 	int power;
 	Tank tank;

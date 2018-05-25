@@ -190,26 +190,26 @@ void UpdateLogic(Scene *scene)
 		GotInTheTank((*scene).activeWeapon, (*scene).players[((*scene).playerLap == 2) ? 1 : 0]) ||
 		scene->activeWeapon->rect.x <= 0 ||
 		scene->activeWeapon->rect.x >= SCREEN_WIDTH ||
-		(scene->activeWeapon->rect.y <= 0 && scene->activeWeapon->name == "Laser") ||
+		(scene->activeWeapon->rect.y <= 0 && strcmp(scene->activeWeapon->name, "Laser") == 0) ||
 		scene->activeWeapon->rect.y >= SCREEN_HEIGHT)) //
 	{
 		if (!(GotInTheTank((*scene).activeWeapon, (*scene).players[((*scene).playerLap == 2) ? 1 : 0]) ||
 			scene->activeWeapon->rect.x <= 0 ||
 			scene->activeWeapon->rect.x >= SCREEN_WIDTH ||
-			(scene->activeWeapon->rect.y <= 0 && scene->activeWeapon->name == "Laser") ||
+			(scene->activeWeapon->rect.y <= 0 && strcmp(scene->activeWeapon->name, "Laser") == 0) ||
 			scene->activeWeapon->rect.y >= SCREEN_HEIGHT))
 		{
 			SDL_Point depth—oordinate = { scene->activeWeapon->rect.x, scene->activeWeapon->rect.y }; //
 
-			if (scene->activeWeapon->name == "Chinese Wall")
+			if (strcmp(scene->activeWeapon->name, "Chinese Wall") == 0)
 				for (int i = depth—oordinate.x - 5; i < depth—oordinate.x + 5; i++)
 					scene->landscape.points[i].y -= 300;
-			else if (scene->activeWeapon->name == "Ravine")
+			else if (strcmp(scene->activeWeapon->name, "Ravine") == 0)
 			{
 				for (int i = depth—oordinate.x - 50; i < depth—oordinate.x + 50; i++)
 					scene->landscape.points[i].y += 0.8 * SCREEN_HEIGHT - scene->landscape.points[i].y;
 			}
-			else if (scene->activeWeapon->name != "Laser")
+			else if (strcmp(scene->activeWeapon->name, "Laser") != 0)
 			{
 				double t = 0;
 
@@ -240,7 +240,7 @@ void DoRender(Scene *scene)
 	{
 		(*scene).activeWeapon->rect.x += 0.005 * (*scene).players[((*scene).playerLap == 2) ? 0 : 1].power * cos((*scene).activeWeapon->angle) * (*scene).deltaTime;
 
-		if (scene->activeWeapon->name == "Laser")
+		if (strcmp(scene->activeWeapon->name, "Laser") == 0)
 		{
 			(*scene).activeWeapon->rect.y += 0.005 * (*scene).players[((*scene).playerLap == 2) ? 0 : 1].power * sin((*scene).activeWeapon->angle) * (*scene).deltaTime;
 		}
@@ -307,7 +307,7 @@ void LoadRecords(RecordRow records[NUMBER_OF_RECORD_ROWS])
 
 		for (int i = 0; i < NUMBER_OF_RECORD_ROWS; i++)
 		{
-			records[i].name = "Empty";
+			strcpy_s(records[i].name, NAME_LENGTH, "Empty");
 			records[i].score = 0;
 		}
 
@@ -345,7 +345,7 @@ void UpdateRecords(Player players[])
 			for (int j = NUMBER_OF_RECORD_ROWS - 2; j >= recordsIndex; j--)
 				records[j + 1] = records[j];
 
-			records[recordsIndex].name = players[i].name;
+			strcpy_s(records[recordsIndex].name, NAME_LENGTH, players[i].name);
 			records[recordsIndex].score = players[i].score;
 		}
 	}
@@ -498,23 +498,23 @@ void InitPlayers(Player players[])
 			switch (j)
 			{
 			case 1:
-				weapon->name = "Lolly Bomb";
+				strcpy_s(weapon->name, NAME_LENGTH, "Lolly Bomb");
 				weapon->score = 1;
 				break;
 			case 2:
-				weapon->name = "Lolly Bomb 2.0";
+				strcpy_s(weapon->name, NAME_LENGTH, "Lolly Bomb 2.0");
 				weapon->score = 2;
 				break;
 			case 3:
-				weapon->name = "Chinese Wall";
+				strcpy_s(weapon->name, NAME_LENGTH, "Chinese Wall");
 				weapon->score = 0;
 				break;
 			case 4:
-				weapon->name = "Ravine";
+				strcpy_s(weapon->name, NAME_LENGTH, "Ravine");
 				weapon->score = 0;
 				break;
 			case 5:
-				weapon->name = "Laser";
+				strcpy_s(weapon->name, NAME_LENGTH, "Laser");
 				weapon->score = 5;
 				break;
 			default:
@@ -558,11 +558,11 @@ void InitPlayers(Player players[])
 	}
 
 	// Player 1
-	players[0].name = "Player 1";
+	strcpy_s(players[0].name, NAME_LENGTH, "Player 1");
 	players[0].tank.body.rect = { 10, 125, 75, 45 };
 
 	// Player 2
-	players[1].name = "Player 2";
+	strcpy_s(players[1].name, NAME_LENGTH, "Player 2");
 	players[1].tank.body.rect = { SCREEN_WIDTH - players[0].tank.body.rect.w - 10, players[0].tank.body.rect.y,
 		players[0].tank.body.rect.w, players[0].tank.body.rect.h };
 }
@@ -728,7 +728,7 @@ void RenderWeapon(SDL_Renderer *renderer, Weapon *activeWeapon)
 {
 	if (activeWeapon != NULL)
 	{
-		if (activeWeapon->name == "Laser")
+		if (strcmp(activeWeapon->name, "Laser") == 0)
 		{
 			SDL_Point pointOfRotation = { 0, 0 };
 			activeWeapon->rect.h = 7;
