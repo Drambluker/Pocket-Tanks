@@ -109,6 +109,7 @@ bool ProcessEvents(Scene *scene)
 	(*scene).newTime = GetCounter((*scene).timeStart, (*scene).PCFreq);
 	(*scene).deltaTime = (*scene).newTime - (*scene).oldTime;
 	(*scene).oldTime = (*scene).newTime;
+	double newAngle;
 
 	while (SDL_PollEvent(&scene->event)) {
 		if ((*scene).event.type == SDL_QUIT)
@@ -135,12 +136,22 @@ bool ProcessEvents(Scene *scene)
 
 		if ((*scene).event.type == SDL_KEYDOWN && (*scene).event.key.keysym.sym == SDLK_LEFT && (*scene).players[(*scene).playerLap - 1].tank.body.rect.x > 0)
 		{
-			(*scene).players[(*scene).playerLap - 1].tank.body.rect.x -= 0.03 * (*scene).deltaTime;
+			newAngle = 180 / Pi * atan((double)((*scene).landscape.points[(*scene).players[(*scene).playerLap - 1].tank.body.rect.x - int(0.03 * (*scene).deltaTime) - 1 + (*scene).players[(*scene).playerLap - 1].tank.body.rect.w].y -
+				(*scene).landscape.points[(*scene).players[(*scene).playerLap - 1].tank.body.rect.x - int(0.03 * (*scene).deltaTime) - 1].y) / ((*scene).landscape.points[(*scene).players[(*scene).playerLap - 1].tank.body.rect.x - int(0.03 * (*scene).deltaTime) - 1 + (*scene).players[(*scene).playerLap - 1].tank.body.rect.w].x -
+				(*scene).landscape.points[(*scene).players[(*scene).playerLap - 1].tank.body.rect.x - int(0.03 * (*scene).deltaTime) - 1].x));
+
+			if (newAngle < CRITICAL_ANGLE && newAngle > -45)
+				(*scene).players[(*scene).playerLap - 1].tank.body.rect.x -= 0.03 * (*scene).deltaTime;
 		}
 
 		if ((*scene).event.type == SDL_KEYDOWN && (*scene).event.key.keysym.sym == SDLK_RIGHT && (*scene).players[(*scene).playerLap - 1].tank.body.rect.x + (*scene).players[(*scene).playerLap - 1].tank.body.rect.w * cos((*scene).players[(*scene).playerLap - 1].tank.angle * Pi / 180) < SCREEN_WIDTH)
 		{
-			(*scene).players[(*scene).playerLap - 1].tank.body.rect.x += 0.06 * (*scene).deltaTime;
+			newAngle = 180 / Pi * atan((double)((*scene).landscape.points[(*scene).players[(*scene).playerLap - 1].tank.body.rect.x + int(0.03 * (*scene).deltaTime) + 1 + (*scene).players[(*scene).playerLap - 1].tank.body.rect.w].y -
+				(*scene).landscape.points[(*scene).players[(*scene).playerLap - 1].tank.body.rect.x + int(0.03 * (*scene).deltaTime) + 1].y) / ((*scene).landscape.points[(*scene).players[(*scene).playerLap - 1].tank.body.rect.x + int(0.03 * (*scene).deltaTime) + 1 + (*scene).players[(*scene).playerLap - 1].tank.body.rect.w].x -
+				(*scene).landscape.points[(*scene).players[(*scene).playerLap - 1].tank.body.rect.x + int(0.03 * (*scene).deltaTime) + 1].x));
+
+			if (newAngle > -CRITICAL_ANGLE && newAngle < 45)
+				(*scene).players[(*scene).playerLap - 1].tank.body.rect.x += 0.06 * (*scene).deltaTime;
 		}
 
 		if ((*scene).event.type == SDL_KEYDOWN && (*scene).event.key.keysym.sym == SDLK_SPACE && (*scene).activeWeapon == NULL)
