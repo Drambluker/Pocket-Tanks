@@ -49,6 +49,7 @@ struct Player
 	int power;
 	Tank tank;
 	Weapon *headWeapon, *tailWeapon;
+	int NbrWeapons;
 };
 
 struct Landscape
@@ -63,7 +64,7 @@ struct PlayerTopPanel
 	Player player;
 };
 
-// Eric
+// Common
 struct Scene
 {
 	SDL_Window *window;
@@ -74,7 +75,9 @@ struct Scene
 	Weapon *activeWeapon;
 	double oldTime, newTime, deltaTime, PCFreq;
 	LONGLONG timeStart;
+	int landscapeType;
 	Landscape landscape, defaultLandscape;
 	Player players[2];
 	PlayerTopPanel topPanels[2];
+	bool GameOpening, quitSecondScreen, quitThirdScreen;
 };

@@ -37,6 +37,9 @@ void SetHeadOnNext(Weapon **);
 void SetHeadOnPrev(Weapon **);
 
 // Hank
+void ShowCursor();
+void HideCursor();
+void DrawWeaponInsidePanel(Scene *, const char *);
 void InitTopPanels(PlayerTopPanel[]);
 void DrawTopPanels(SDL_Renderer *, PlayerTopPanel[], SDL_Texture *, SDL_Texture *, SDL_Texture *, int);
 void CreateAndDrawTopPanels(SDL_Renderer *, TTF_Font *, Player[], PlayerTopPanel[]);
@@ -47,3 +50,11 @@ SDL_Texture * CreateTextureFromNumber(SDL_Renderer *, TTF_Font *, int, SDL_Color
 SDL_Texture * CreateTextureFromText(SDL_Renderer *, TTF_Font *, const char *, SDL_Color, SDL_Color);
 void BottomPanelInterations(Player[], int, int, int, Weapon *);
 bool GotInTheTank(Weapon *, Player);
+
+void DrawMsgOnBottonScreen(Scene *, const char *);
+void Draw_ALL_BestScoreLines(Scene *, RecordRow[NUMBER_OF_RECORD_ROWS], SDL_Texture *);
+void DrawBestScoresPanel(Scene *);
+bool CreateAndDrawStartMenu(Scene *);
+int ExitWhileInMenu(Scene *);
+void SecondMenuScreenInterations(Scene *, SDL_Rect, SDL_Rect, SDL_Rect);
+void CreateAndDraw2PlayersMenu(Scene *);

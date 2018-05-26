@@ -46,6 +46,7 @@ double InterpolateLagrangePolynomial(double x, double xValues[], double yValues[
 
 void LoadScene(Scene *scene)
 {
+	scene->GameOpening = true;
 	if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
 	{
 		printf_s("SDL_Error: %s\n", SDL_GetError());
@@ -60,43 +61,48 @@ void LoadScene(Scene *scene)
 		exit(1);
 	}
 
-	int landscapeType;
+	//Set texture filtering to linear
+	if (!SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1"))
+	{
+		printf("Warning: Linear texture filtering not enabled!");
+	}
 
-	printf_s("Landscape type: ");
-	scanf_s("%d", &landscapeType);
-
-	(*scene).window = SDL_CreateWindow("Pocket Tanks", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
-
-	if (!(*scene).window)
+	scene->window = SDL_CreateWindow("Pocket Tanks", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+	if (!scene->window)
 	{
 		printf_s("SDL_Error: %s\n", SDL_GetError());
 		system("pause");
 		exit(1);
 	}
 
-	(*scene).renderer = SDL_CreateRenderer((*scene).window, -1, 0);
-
-	if (!(*scene).renderer)
+	//Create vsynced renderer for window
+	scene->renderer = SDL_CreateRenderer(scene->window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+	if (!scene->renderer)
 	{
 		printf_s("SDL_Error: %s\n", SDL_GetError());
 		system("pause");
 		exit(1);
 	}
 
-	(*scene).font = TTF_OpenFont("arial.ttf", 200);
-
-	if (!(*scene).font)
+	scene->font = TTF_OpenFont("arial.ttf", 100);
+	if (!scene->font)
 	{
 		printf_s("TTF_Error: %s\n", TTF_GetError());
 		system("pause");
 		exit(1);
 	}
 
-	InitLandscape(&scene->landscape, &scene->defaultLandscape, landscapeType);
-	InitPlayers((*scene).players);
-	InitTopPanels((*scene).topPanels);
+	if (scene->GameOpening == true)
+	{
+		CreateAndDrawStartMenu(scene);
+		scene->GameOpening = false;
+	}
 
-	LoadTextures((*scene).renderer, (*scene).players);
+	InitLandscape(&scene->landscape, &scene->defaultLandscape, scene->landscapeType);
+	InitPlayers(scene->players);
+	InitTopPanels(scene->topPanels);
+
+	LoadTextures(scene->renderer, scene->players);
 
 	scene->playerLap = 1;
 	scene->activeWeapon = NULL;
@@ -106,65 +112,65 @@ void LoadScene(Scene *scene)
 
 bool ProcessEvents(Scene *scene)
 {
-	(*scene).newTime = GetCounter((*scene).timeStart, (*scene).PCFreq);
-	(*scene).deltaTime = (*scene).newTime - (*scene).oldTime;
-	(*scene).oldTime = (*scene).newTime;
+	scene->newTime = GetCounter(scene->timeStart, scene->PCFreq);
+	scene->deltaTime = scene->newTime - scene->oldTime;
+	scene->oldTime = scene->newTime;
 	double newAngle;
 
 	while (SDL_PollEvent(&scene->event)) {
-		if ((*scene).event.type == SDL_QUIT)
+		if (scene->event.type == SDL_QUIT)
 			return true;
 
-		if ((*scene).event.type == SDL_MOUSEBUTTONDOWN && (*scene).event.button.button == SDL_BUTTON_LEFT)
+		if (scene->event.type == SDL_MOUSEBUTTONDOWN && scene->event.button.button == SDL_BUTTON_LEFT)
 		{
-			BottomPanelInterations((*scene).players, (*scene).event.button.x, (*scene).event.button.y, (*scene).playerLap, (*scene).activeWeapon);
+			BottomPanelInterations(scene->players, scene->event.button.x, scene->event.button.y, scene->playerLap, scene->activeWeapon);
 		}
 
-		if ((*scene).event.type == SDL_KEYDOWN && (*scene).event.key.keysym.sym == SDLK_UP)
+		if (scene->event.type == SDL_KEYDOWN && scene->event.key.keysym.sym == SDLK_UP)
 		{
-			if ((*scene).playerLap == 1) (*scene).players[(*scene).playerLap - 1].tank.cannon.angle--;
-			if ((*scene).playerLap == 2) (*scene).players[(*scene).playerLap - 1].tank.cannon.angle++;
+			if (scene->playerLap == 1) scene->players[scene->playerLap - 1].tank.cannon.angle--;
+			if (scene->playerLap == 2) scene->players[scene->playerLap - 1].tank.cannon.angle++;
 		}
 
-		if ((*scene).event.type == SDL_KEYDOWN && (*scene).event.key.keysym.sym == SDLK_DOWN)
+		if (scene->event.type == SDL_KEYDOWN && scene->event.key.keysym.sym == SDLK_DOWN)
 		{
-			if ((*scene).playerLap == 1) (*scene).players[(*scene).playerLap - 1].tank.cannon.angle++;
-			if ((*scene).playerLap == 2) (*scene).players[(*scene).playerLap - 1].tank.cannon.angle--;
+			if (scene->playerLap == 1) scene->players[scene->playerLap - 1].tank.cannon.angle++;
+			if (scene->playerLap == 2) scene->players[scene->playerLap - 1].tank.cannon.angle--;
 		}
 
 		// if sizechanged - mustRedraw = true;
 
-		if ((*scene).event.type == SDL_KEYDOWN && (*scene).event.key.keysym.sym == SDLK_LEFT && (*scene).players[(*scene).playerLap - 1].tank.body.rect.x > 0)
+		if (scene->event.type == SDL_KEYDOWN && scene->event.key.keysym.sym == SDLK_LEFT && scene->players[scene->playerLap - 1].tank.body.rect.x > 0)
 		{
-			newAngle = 180 / Pi * atan((double)((*scene).landscape.points[(*scene).players[(*scene).playerLap - 1].tank.body.rect.x - int(0.03 * (*scene).deltaTime) - 1 + (*scene).players[(*scene).playerLap - 1].tank.body.rect.w].y -
-				(*scene).landscape.points[(*scene).players[(*scene).playerLap - 1].tank.body.rect.x - int(0.03 * (*scene).deltaTime) - 1].y) / ((*scene).landscape.points[(*scene).players[(*scene).playerLap - 1].tank.body.rect.x - int(0.03 * (*scene).deltaTime) - 1 + (*scene).players[(*scene).playerLap - 1].tank.body.rect.w].x -
-				(*scene).landscape.points[(*scene).players[(*scene).playerLap - 1].tank.body.rect.x - int(0.03 * (*scene).deltaTime) - 1].x));
+			newAngle = 180 / Pi * atan((double)(scene->landscape.points[scene->players[scene->playerLap - 1].tank.body.rect.x - int(0.03 * scene->deltaTime) - 1 + scene->players[scene->playerLap - 1].tank.body.rect.w].y -
+				scene->landscape.points[scene->players[scene->playerLap - 1].tank.body.rect.x - int(0.03 * scene->deltaTime) - 1].y) / (scene->landscape.points[scene->players[scene->playerLap - 1].tank.body.rect.x - int(0.03 * scene->deltaTime) - 1 + scene->players[scene->playerLap - 1].tank.body.rect.w].x -
+				scene->landscape.points[scene->players[scene->playerLap - 1].tank.body.rect.x - int(0.03 * scene->deltaTime) - 1].x));
 
 			if (newAngle < CRITICAL_ANGLE && newAngle > -45)
-				(*scene).players[(*scene).playerLap - 1].tank.body.rect.x -= 0.03 * (*scene).deltaTime;
+				scene->players[scene->playerLap - 1].tank.body.rect.x -= 0.03 * scene->deltaTime;
 		}
 
-		if ((*scene).event.type == SDL_KEYDOWN && (*scene).event.key.keysym.sym == SDLK_RIGHT && (*scene).players[(*scene).playerLap - 1].tank.body.rect.x + (*scene).players[(*scene).playerLap - 1].tank.body.rect.w * cos((*scene).players[(*scene).playerLap - 1].tank.angle * Pi / 180) < SCREEN_WIDTH)
+		if (scene->event.type == SDL_KEYDOWN && scene->event.key.keysym.sym == SDLK_RIGHT && scene->players[scene->playerLap - 1].tank.body.rect.x + scene->players[scene->playerLap - 1].tank.body.rect.w * cos(scene->players[scene->playerLap - 1].tank.angle * Pi / 180) < SCREEN_WIDTH)
 		{
-			newAngle = 180 / Pi * atan((double)((*scene).landscape.points[(*scene).players[(*scene).playerLap - 1].tank.body.rect.x + int(0.03 * (*scene).deltaTime) + 1 + (*scene).players[(*scene).playerLap - 1].tank.body.rect.w].y -
-				(*scene).landscape.points[(*scene).players[(*scene).playerLap - 1].tank.body.rect.x + int(0.03 * (*scene).deltaTime) + 1].y) / ((*scene).landscape.points[(*scene).players[(*scene).playerLap - 1].tank.body.rect.x + int(0.03 * (*scene).deltaTime) + 1 + (*scene).players[(*scene).playerLap - 1].tank.body.rect.w].x -
-				(*scene).landscape.points[(*scene).players[(*scene).playerLap - 1].tank.body.rect.x + int(0.03 * (*scene).deltaTime) + 1].x));
+			newAngle = 180 / Pi * atan((double)(scene->landscape.points[scene->players[scene->playerLap - 1].tank.body.rect.x + int(0.03 * scene->deltaTime) + 1 + scene->players[scene->playerLap - 1].tank.body.rect.w].y -
+				scene->landscape.points[scene->players[scene->playerLap - 1].tank.body.rect.x + int(0.03 * scene->deltaTime) + 1].y) / (scene->landscape.points[scene->players[scene->playerLap - 1].tank.body.rect.x + int(0.03 * scene->deltaTime) + 1 + scene->players[scene->playerLap - 1].tank.body.rect.w].x -
+				scene->landscape.points[scene->players[scene->playerLap - 1].tank.body.rect.x + int(0.03 * scene->deltaTime) + 1].x));
 
 			if (newAngle > -CRITICAL_ANGLE && newAngle < 45)
-				(*scene).players[(*scene).playerLap - 1].tank.body.rect.x += 0.06 * (*scene).deltaTime;
+				scene->players[scene->playerLap - 1].tank.body.rect.x += 0.06 * scene->deltaTime;
 		}
 
-		if ((*scene).event.type == SDL_KEYDOWN && (*scene).event.key.keysym.sym == SDLK_SPACE && (*scene).activeWeapon == NULL)
+		if (scene->event.type == SDL_KEYDOWN && scene->event.key.keysym.sym == SDLK_SPACE && scene->activeWeapon == NULL)
 		{
-			(*scene).activeWeapon = PopWeapon(&scene->players[(*scene).playerLap - 1].headWeapon);
+			scene->activeWeapon = PopWeapon(&scene->players[scene->playerLap - 1].headWeapon);
 
-			if ((*scene).activeWeapon == NULL && (*scene).playerLap == 2)
+			if (scene->activeWeapon == NULL && scene->playerLap == 2)
 			{
 				return true;
 			}
 
-			if ((*scene).playerLap == 1) (*scene).playerLap = 2;
-			else (*scene).playerLap = 1;
+			if (scene->playerLap == 1) scene->playerLap = 2;
+			else scene->playerLap = 1;
 		}
 	}
 
@@ -173,38 +179,38 @@ bool ProcessEvents(Scene *scene)
 
 void UpdateLogic(Scene *scene)
 {
-	SDL_SetRenderDrawColor((*scene).renderer, 160, 200, 160, 0);
-	SDL_RenderClear((*scene).renderer);
+	SDL_SetRenderDrawColor(scene->renderer, 160, 200, 160, 0);
+	SDL_RenderClear(scene->renderer);
 
-	if ((*scene).players[0].tank.body.rect.x + (*scene).players[0].tank.body.rect.w < SCREEN_WIDTH)
+	if (scene->players[0].tank.body.rect.x + scene->players[0].tank.body.rect.w < SCREEN_WIDTH)
 	{
-		(*scene).players[0].tank.angle = 180 / Pi * atan((double)((*scene).landscape.points[(*scene).players[0].tank.body.rect.x + (*scene).players[0].tank.body.rect.w].y -
-			(*scene).landscape.points[(*scene).players[0].tank.body.rect.x].y) / ((*scene).landscape.points[(*scene).players[0].tank.body.rect.x + (*scene).players[0].tank.body.rect.w].x -
-			(*scene).landscape.points[(*scene).players[0].tank.body.rect.x].x));
+		scene->players[0].tank.angle = 180 / Pi * atan((double)(scene->landscape.points[scene->players[0].tank.body.rect.x + scene->players[0].tank.body.rect.w].y -
+			scene->landscape.points[scene->players[0].tank.body.rect.x].y) / (scene->landscape.points[scene->players[0].tank.body.rect.x + scene->players[0].tank.body.rect.w].x -
+			scene->landscape.points[scene->players[0].tank.body.rect.x].x));
 	}
 
-	if ((*scene).players[1].tank.body.rect.x + (*scene).players[1].tank.body.rect.w < SCREEN_WIDTH)
+	if (scene->players[1].tank.body.rect.x + scene->players[1].tank.body.rect.w < SCREEN_WIDTH)
 	{
-		(*scene).players[1].tank.angle = 180 / Pi * atan((double)((*scene).landscape.points[(*scene).players[1].tank.body.rect.x + (*scene).players[1].tank.body.rect.w].y -
-			(*scene).landscape.points[(*scene).players[1].tank.body.rect.x].y) / ((*scene).landscape.points[(*scene).players[1].tank.body.rect.x + (*scene).players[1].tank.body.rect.w].x -
-			(*scene).landscape.points[(*scene).players[1].tank.body.rect.x].x));
+		scene->players[1].tank.angle = 180 / Pi * atan((double)(scene->landscape.points[scene->players[1].tank.body.rect.x + scene->players[1].tank.body.rect.w].y -
+			scene->landscape.points[scene->players[1].tank.body.rect.x].y) / (scene->landscape.points[scene->players[1].tank.body.rect.x + scene->players[1].tank.body.rect.w].x -
+			scene->landscape.points[scene->players[1].tank.body.rect.x].x));
 	}
 
-	Gravitate((*scene).players, (*scene).landscape);
+	Gravitate(scene->players, scene->landscape);
 
-	if ((*scene).activeWeapon != NULL && GotInTheTank((*scene).activeWeapon, (*scene).players[((*scene).playerLap == 2) ? 1 : 0]))
+	if (scene->activeWeapon != NULL && GotInTheTank(scene->activeWeapon, scene->players[(scene->playerLap == 2) ? 1 : 0]))
 	{
-		(*scene).players[((*scene).playerLap == 2) ? 0 : 1].score += (*scene).activeWeapon->score;
+		scene->players[(scene->playerLap == 2) ? 0 : 1].score += scene->activeWeapon->score;
 	}
 
-	if ((*scene).activeWeapon != NULL && ((*scene).activeWeapon->rect.y >= (*scene).landscape.points[(*scene).activeWeapon->rect.x].y ||
-		GotInTheTank((*scene).activeWeapon, (*scene).players[((*scene).playerLap == 2) ? 1 : 0]) ||
+	if (scene->activeWeapon != NULL && (scene->activeWeapon->rect.y >= scene->landscape.points[scene->activeWeapon->rect.x].y ||
+		GotInTheTank(scene->activeWeapon, scene->players[(scene->playerLap == 2) ? 1 : 0]) ||
 		scene->activeWeapon->rect.x <= 0 ||
 		scene->activeWeapon->rect.x >= SCREEN_WIDTH ||
 		(scene->activeWeapon->rect.y <= 0 && strcmp(scene->activeWeapon->name, "Laser") == 0) ||
 		scene->activeWeapon->rect.y >= SCREEN_HEIGHT)) //
 	{
-		if (!(GotInTheTank((*scene).activeWeapon, (*scene).players[((*scene).playerLap == 2) ? 1 : 0]) ||
+		if (!(GotInTheTank(scene->activeWeapon, scene->players[(scene->playerLap == 2) ? 1 : 0]) ||
 			scene->activeWeapon->rect.x <= 0 ||
 			scene->activeWeapon->rect.x >= SCREEN_WIDTH ||
 			(scene->activeWeapon->rect.y <= 0 && strcmp(scene->activeWeapon->name, "Laser") == 0) ||
@@ -234,42 +240,42 @@ void UpdateLogic(Scene *scene)
 			}
 		}
 
-		SDL_DestroyTexture((*scene).activeWeapon->texture);
-		(*scene).activeWeapon->texture = NULL;
-		free((*scene).activeWeapon);
-		(*scene).activeWeapon = NULL;
+		SDL_DestroyTexture(scene->activeWeapon->texture);
+		scene->activeWeapon->texture = NULL;
+		free(scene->activeWeapon);
+		scene->activeWeapon = NULL;
 	}
 }
 
 void DoRender(Scene *scene)
 {
-	RenderWeapon((*scene).renderer, (*scene).activeWeapon);
-	DrawLandscape((*scene).renderer, (*scene).landscape);
-	DrawTanks((*scene).renderer, (*scene).players);
+	RenderWeapon(scene->renderer, scene->activeWeapon);
+	DrawLandscape(scene->renderer, scene->landscape);
+	DrawTanks(scene->renderer, scene->players);
 
-	if ((*scene).activeWeapon != NULL && (*scene).activeWeapon->rect.y < (*scene).landscape.points[(*scene).activeWeapon->rect.x].y)
+	if (scene->activeWeapon != NULL && scene->activeWeapon->rect.y < scene->landscape.points[scene->activeWeapon->rect.x].y)
 	{
-		(*scene).activeWeapon->rect.x += 0.005 * (*scene).players[((*scene).playerLap == 2) ? 0 : 1].power * cos((*scene).activeWeapon->angle) * (*scene).deltaTime;
+		scene->activeWeapon->rect.x += 0.005 * scene->players[(scene->playerLap == 2) ? 0 : 1].power * cos(scene->activeWeapon->angle) * scene->deltaTime;
 
 		if (strcmp(scene->activeWeapon->name, "Laser") == 0)
 		{
-			(*scene).activeWeapon->rect.y += 0.005 * (*scene).players[((*scene).playerLap == 2) ? 0 : 1].power * sin((*scene).activeWeapon->angle) * (*scene).deltaTime;
+			scene->activeWeapon->rect.y += 0.005 * scene->players[(scene->playerLap == 2) ? 0 : 1].power * sin(scene->activeWeapon->angle) * scene->deltaTime;
 		}
 		else
 		{
-			(*scene).activeWeapon->rect.y += 0.005 * (*scene).players[((*scene).playerLap == 2) ? 0 : 1].power * sin((*scene).activeWeapon->angle) * (*scene).deltaTime + (*scene).activeWeapon->gravitatin * (*scene).deltaTime;
-			(*scene).activeWeapon->gravitatin += 0.0025;
+			scene->activeWeapon->rect.y += 0.005 * scene->players[(scene->playerLap == 2) ? 0 : 1].power * sin(scene->activeWeapon->angle) * scene->deltaTime + scene->activeWeapon->gravitatin * scene->deltaTime;
+			scene->activeWeapon->gravitatin += 0.0025;
 		}
 	}
 
-	CreateAndDrawTopPanels((*scene).renderer, (*scene).font, (*scene).players, (*scene).topPanels);
-	CreateAndDrawBottomPanels((*scene).renderer, (*scene).font, (*scene).players);
+	CreateAndDrawTopPanels(scene->renderer, scene->font, scene->players, scene->topPanels);
+	CreateAndDrawBottomPanels(scene->renderer, scene->font, scene->players);
 
 	//CreateAndDrawTopPanels(renderer, font, players, topPanels, mustRedraw); //
 	//CreateAndDrawBottomPanels(renderer, font, players, mustRedraw); //
 	//mustRedraw = false; //
 
-	SDL_RenderPresent((*scene).renderer);
+	SDL_RenderPresent(scene->renderer);
 }
 
 void DestroyScene(Scene *scene)
@@ -290,11 +296,11 @@ void DestroyScene(Scene *scene)
 		}
 	}
 
-	DestroyTextures((*scene).players, (*scene).activeWeapon);
+	DestroyTextures(scene->players, scene->activeWeapon);
 
-	SDL_DestroyRenderer((*scene).renderer);
-	SDL_DestroyWindow((*scene).window);
-	TTF_CloseFont((*scene).font);
+	SDL_DestroyRenderer(scene->renderer);
+	SDL_DestroyWindow(scene->window);
+	TTF_CloseFont(scene->font);
 	TTF_Quit();
 	SDL_Quit();
 }
@@ -499,7 +505,7 @@ void InitPlayers(Player players[])
 		players[i].tank.cannon.texture = NULL;
 		players[i].tank.cannon.angle = 0;
 		players[i].tank.angle = 0;
-		players[i].headWeapon = NULL;
+		/*players[i].headWeapon = NULL;
 		players[i].tailWeapon = NULL;
 
 		for (int j = 1; j <= NUMBER_OF_WEAPON; j++)
@@ -535,7 +541,7 @@ void InitPlayers(Player players[])
 			weapon->angle = 0;
 			weapon->gravitatin = 0;
 			PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
-		}
+		}*/
 
 		//weapon = (Weapon *)malloc(sizeof(Weapon));
 		//weapon->name = "Lolly Bomb";
@@ -569,11 +575,11 @@ void InitPlayers(Player players[])
 	}
 
 	// Player 1
-	strcpy_s(players[0].name, NAME_LENGTH, "Player 1");
+	//strcpy_s(players[0].name, NAME_LENGTH, "Player 1");
 	players[0].tank.body.rect = { 10, 125, 75, 45 };
 
 	// Player 2
-	strcpy_s(players[1].name, NAME_LENGTH, "Player 2");
+	//strcpy_s(players[1].name, NAME_LENGTH, "Player 2");
 	players[1].tank.body.rect = { SCREEN_WIDTH - players[0].tank.body.rect.w - 10, players[0].tank.body.rect.y,
 		players[0].tank.body.rect.w, players[0].tank.body.rect.h };
 }
@@ -832,6 +838,1082 @@ void SetHeadOnPrev(Weapon **headWeapons)
 }
 
 // Hank
+void Draw_ALL_BestScoreLines(Scene *scene, RecordRow records[NUMBER_OF_RECORD_ROWS], SDL_Texture *TexturePanelBestScores)
+{
+	SDL_Color colorBlack = { 0, 0, 0 };
+	SDL_Color colorScoresBg = { 128, 128, 0 };
+	for (int i = 0; i < NUMBER_OF_RECORD_ROWS; i++)
+	{
+		if (records[i].name != "Empty")
+		{
+			SDL_Rect BestScoreRank_rect = { (int)((71.0 / 90)*SCREEN_WIDTH), (int)((14.0 / 55)*SCREEN_HEIGHT) - (int)(SCREEN_HEIGHT / 20.0) + i * ((int)((3.0 / 55)*SCREEN_HEIGHT)), (int)(SCREEN_WIDTH / 48.0), (int)((3.0 / 55)*SCREEN_HEIGHT) };
+			SDL_Texture * textureBestScoreRank = CreateTextureFromNumber(scene->renderer, scene->font, i + 1, colorBlack, colorScoresBg);
+			SDL_RenderCopy(scene->renderer, textureBestScoreRank, NULL, &BestScoreRank_rect);
+
+			SDL_Rect BestScoreName_rect = { BestScoreRank_rect.x + BestScoreRank_rect.w, BestScoreRank_rect.y, (int)((2.0 / 24)*SCREEN_WIDTH), BestScoreRank_rect.h };
+			SDL_Texture * textureBestScoreName = CreateTextureFromText(scene->renderer, scene->font, records[i].name, colorBlack, colorScoresBg);
+			SDL_RenderCopy(scene->renderer, textureBestScoreName, NULL, &BestScoreName_rect);
+
+			SDL_Rect BestScoreScore_rect = { BestScoreName_rect.x + BestScoreName_rect.w, BestScoreRank_rect.y, BestScoreRank_rect.w, BestScoreRank_rect.h };
+			SDL_Texture * textureBestScoreScore = CreateTextureFromNumber(scene->renderer, scene->font, records[i].score, colorBlack, colorScoresBg);
+			SDL_RenderCopy(scene->renderer, textureBestScoreScore, NULL, &BestScoreScore_rect);
+
+			SDL_DestroyTexture(textureBestScoreRank);
+			SDL_DestroyTexture(textureBestScoreName);
+			SDL_DestroyTexture(textureBestScoreScore);
+		}
+	}
+}
+
+void DrawMsgOnBottonScreen(Scene *scene, const char *Msg)
+{
+	SDL_Color colorBlack = { 0, 0, 0 };
+	SDL_Color colorBg = { 153, 153, 0 };
+	SDL_Rect WordCurrentPlayerChoosing_rect = { (int)((27.0 / 80)*SCREEN_WIDTH), (int)((14.0 / 15)*SCREEN_HEIGHT) + 10, (int)(SCREEN_WIDTH / 7.0), (int)(SCREEN_HEIGHT / 15.0) - 10 };
+	SDL_SetRenderDrawColor(scene->renderer, 153, 153, 0, 0);
+	SDL_RenderFillRect(scene->renderer, &WordCurrentPlayerChoosing_rect);
+	SDL_SetRenderDrawColor(scene->renderer, 0, 0, 0, 0);
+	SDL_Texture * textureCurrentPlayerChoosing = CreateTextureFromText(scene->renderer, scene->font, Msg, colorBlack, colorBg);
+	SDL_RenderCopy(scene->renderer, textureCurrentPlayerChoosing, NULL, &WordCurrentPlayerChoosing_rect);
+	SDL_DestroyTexture(textureCurrentPlayerChoosing);
+}
+
+void DrawBestScoresPanel(Scene *scene)
+{
+	SDL_Color colorScoresBg = { 128, 128, 0 };
+	SDL_Color colorGold = { 255, 215, 0 };
+	SDL_Texture* TexturePanelBestScores = SDL_CreateTexture(scene->renderer, SDL_PIXELFORMAT_RGB555, SDL_TEXTUREACCESS_TARGET, (int)(SCREEN_WIDTH / 8.0), (int)((3.0 / 5)*SCREEN_HEIGHT));
+	//Creating and coloring the Best Score Panel
+	SDL_SetRenderDrawColor(scene->renderer, 128, 128, 0, 0);
+	SDL_Rect BestScoresPanel_rect = { (int)((71.0 / 90)*SCREEN_WIDTH), (int)((11.0 / 80)*SCREEN_HEIGHT), (int)(SCREEN_WIDTH / 8.0), (int)((3.0 / 5)*SCREEN_HEIGHT) };
+	SDL_RenderFillRect(scene->renderer, &BestScoresPanel_rect);
+	SDL_SetRenderDrawColor(scene->renderer, 0, 0, 0, 0);
+	//Drawing word "Best Scores"
+	SDL_Rect WordBestScores_rect = { BestScoresPanel_rect.x, BestScoresPanel_rect.y, BestScoresPanel_rect.w, (int)((3.0 / 55)*SCREEN_HEIGHT) };
+	SDL_Texture * textureWordBestScores = CreateTextureFromText(scene->renderer, scene->font, " Best Scores ", colorGold, colorScoresBg);
+	SDL_RenderCopy(scene->renderer, textureWordBestScores, NULL, &WordBestScores_rect);
+	SDL_DestroyTexture(textureWordBestScores);
+
+	//Prepare and Draw the best scores
+	RecordRow records[NUMBER_OF_RECORD_ROWS];
+	LoadRecords(records);
+
+
+	Draw_ALL_BestScoreLines(scene, records, TexturePanelBestScores);
+
+
+	SDL_SetRenderTarget(scene->renderer, TexturePanelBestScores);
+	SDL_SetRenderTarget(scene->renderer, NULL);
+	SDL_DestroyTexture(TexturePanelBestScores);
+}
+
+bool CreateAndDrawStartMenu(Scene *scene)
+{
+	SDL_SetRenderDrawColor(scene->renderer, 128, 128, 0, 0);
+	SDL_RenderClear(scene->renderer);
+	SDL_Texture* TextureOpenGameScreen = SDL_CreateTexture(scene->renderer, SDL_PIXELFORMAT_RGB555, SDL_TEXTUREACCESS_TARGET, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+	SDL_Rect WordPocketTanks_rect = { (int)(SCREEN_WIDTH / 10.0), (int)((1.0 / 7)*SCREEN_HEIGHT), (int)((8.0 / 10)*SCREEN_WIDTH), (int)(SCREEN_HEIGHT / 7.0) };
+	SDL_Rect WordBy_rect = { (int)(SCREEN_WIDTH / 2) - 20, SCREEN_HEIGHT - 169, 40, 42 };
+	SDL_Rect NameEmail_Hank_rect = { (int)(SCREEN_WIDTH / 10.0), SCREEN_HEIGHT - 77 , 364, 77 };
+	SDL_Rect NameEmail_Eric_rect = { (int)((9.0 / 10)*SCREEN_WIDTH) - 285, NameEmail_Hank_rect.y, 285, NameEmail_Hank_rect.h };
+
+	SDL_Texture * textureWordPocketTanks = LoadTexture(scene->renderer, "Sprites/Logo_Pocket_Tanks.BMP");
+	SDL_Texture * textureWordBy = LoadTexture(scene->renderer, "Sprites/WordBy.BMP");
+	SDL_Texture * textureNameEmail_Hank = LoadTexture(scene->renderer, "Sprites/Nom_Email_Hank.BMP");
+	SDL_Texture * textureNameEmail_Eric = LoadTexture(scene->renderer, "Sprites/Nom_Email_Eric.BMP");
+
+	SDL_RenderCopy(scene->renderer, textureWordPocketTanks, NULL, &WordPocketTanks_rect);
+	SDL_RenderCopy(scene->renderer, textureWordBy, NULL, &WordBy_rect);
+	SDL_RenderCopy(scene->renderer, textureNameEmail_Hank, NULL, &NameEmail_Hank_rect);
+	SDL_RenderCopy(scene->renderer, textureNameEmail_Eric, NULL, &NameEmail_Eric_rect);
+
+	//Destroy Textures
+	SDL_DestroyTexture(textureWordPocketTanks);
+	SDL_DestroyTexture(textureWordBy);
+	SDL_DestroyTexture(textureNameEmail_Hank);
+	SDL_DestroyTexture(textureNameEmail_Eric);
+	//Show First Game Screen (Introduction Screen)
+	SDL_SetRenderTarget(scene->renderer, TextureOpenGameScreen);
+	SDL_RenderPresent(scene->renderer);
+	SDL_SetRenderTarget(scene->renderer, NULL);
+	SDL_DestroyTexture(TextureOpenGameScreen);
+
+	time_t enter_time, finishFirstScreen_time;
+	time(&enter_time);
+	/*
+	HideCursor();
+	*/
+	do {
+		time(&finishFirstScreen_time);
+
+	} while (difftime(finishFirstScreen_time, enter_time) < 5);
+	/*
+	ShowCursor();
+	*/
+	//Prepare to show the second screen
+	SDL_Color colorBlack = { 0, 0, 0 };
+	SDL_Color colorGold = { 255, 215, 0 };
+	SDL_Color colorGrey = { 61, 61, 92 };
+	SDL_Color colorBg = { 153, 153, 0 };
+	SDL_SetRenderDrawColor(scene->renderer, 153, 153, 0, 0);
+	SDL_RenderClear(scene->renderer);
+
+	//Draw the main screen
+	SDL_Texture* TextureMenuStart = SDL_CreateTexture(scene->renderer, SDL_PIXELFORMAT_RGB555, SDL_TEXTUREACCESS_TARGET, (int)((11.0 / 15)*SCREEN_WIDTH), (int)((14.0 / 15)*SCREEN_HEIGHT));
+
+	SDL_Rect Button1Player_rect = { (int)((27.0 / 80)*SCREEN_WIDTH), (int)((17.0 / 60)*SCREEN_HEIGHT), (int)(SCREEN_WIDTH / 6.0), (int)(SCREEN_HEIGHT / 12.0) };
+	SDL_Rect Button2Players_rect = { (int)((27.0 / 80)*SCREEN_WIDTH), (int)((17.0 / 60)*SCREEN_HEIGHT) + Button1Player_rect.h + 100, Button1Player_rect.w, Button1Player_rect.h };
+
+	SDL_Texture * textureButton1Player = CreateTextureFromText(scene->renderer, scene->font, " 1 PLAYER ", colorBlack, colorGrey);
+	SDL_Texture * textureButton2Players = CreateTextureFromText(scene->renderer, scene->font, " 2 PLAYERS ", colorBlack, colorGrey);
+
+	SDL_RenderCopy(scene->renderer, textureButton1Player, NULL, &Button1Player_rect);
+	SDL_RenderCopy(scene->renderer, textureButton2Players, NULL, &Button2Players_rect);
+
+	SDL_DestroyTexture(textureButton1Player);
+	SDL_DestroyTexture(textureButton2Players);
+
+	SDL_SetRenderTarget(scene->renderer, TextureMenuStart);
+	SDL_RenderPresent(scene->renderer);
+	SDL_SetRenderTarget(scene->renderer, NULL);
+	SDL_DestroyTexture(TextureMenuStart);
+
+	//Draw the right panel for Best Scores
+	DrawBestScoresPanel(scene);
+
+	//Drawing the button "Quit the Game"	
+	SDL_Rect ButtonQuitTheGame_rect = { (int)((71.0 / 90)*SCREEN_WIDTH), (int)((14.0 / 15)*SCREEN_HEIGHT), (int)(SCREEN_WIDTH / 8.0), (int)(SCREEN_HEIGHT / 15.0) };
+	SDL_Texture * textureButtonQuitTheGame = CreateTextureFromText(scene->renderer, scene->font, " Quit The Game ", colorBlack, colorGrey);
+	SDL_RenderCopy(scene->renderer, textureButtonQuitTheGame, NULL, &ButtonQuitTheGame_rect);
+	SDL_DestroyTexture(textureButtonQuitTheGame);
+	SDL_RenderPresent(scene->renderer);
+
+	//Initializing the players's names with test values
+	strcpy_s(scene->players[0].name, NAME_LENGTH, "Player 1");
+	strcpy_s(scene->players[1].name, NAME_LENGTH, "Player 2");
+
+
+	//Working with interactions on the second screen
+	scene->quitSecondScreen = false;
+	while (scene->quitSecondScreen != true)
+	{
+		while (SDL_PollEvent(&scene->event))
+		{
+			if (scene->event.type == SDL_QUIT)ExitWhileInMenu(scene);
+			if (scene->event.type == SDL_MOUSEBUTTONDOWN && scene->event.button.button == SDL_BUTTON_LEFT)
+			{
+				time(&enter_time);
+				do {
+					time(&finishFirstScreen_time);
+				} while (difftime(finishFirstScreen_time, enter_time) < 1);
+				SecondMenuScreenInterations(scene, Button1Player_rect, Button2Players_rect, ButtonQuitTheGame_rect);
+				break;
+			}
+		}
+	}
+	return true;
+}
+
+void SecondMenuScreenInterations(Scene *scene, SDL_Rect Button1Player_rect, SDL_Rect Button2Players_rect, SDL_Rect ButtonQuitTheGame_rect)
+{
+	if ((scene->event.button.x >= Button1Player_rect.x) && (scene->event.button.x <= Button1Player_rect.x + Button1Player_rect.w)
+		&& (scene->event.button.y >= Button1Player_rect.y) && (scene->event.button.y <= Button1Player_rect.y + Button1Player_rect.h))
+		//CreateAndDraw1PlayerMenu(scene);
+		// NEEDS TO BE DONE !!!
+		true;
+	if ((scene->event.button.x >= Button2Players_rect.x) && (scene->event.button.x <= Button2Players_rect.x + Button2Players_rect.w)
+		&& (scene->event.button.y >= Button2Players_rect.y) && (scene->event.button.y <= Button2Players_rect.y + Button2Players_rect.h))
+		CreateAndDraw2PlayersMenu(scene);
+	if ((scene->event.button.x >= ButtonQuitTheGame_rect.x) && (scene->event.button.x <= ButtonQuitTheGame_rect.x + ButtonQuitTheGame_rect.w)
+		&& (scene->event.button.y >= ButtonQuitTheGame_rect.y) && (scene->event.button.y <= ButtonQuitTheGame_rect.y + ButtonQuitTheGame_rect.h))
+		ExitWhileInMenu(scene);
+}
+
+void CreateAndDraw2PlayersMenu(Scene *scene)
+{
+	SDL_Color colorBlack = { 0, 0, 0 };
+	SDL_Color colorWhite = { 255, 255, 255 };
+	SDL_Color colorGold = { 255, 215, 0 };
+	SDL_Color colorGrey = { 61, 61, 92 };
+	SDL_Color colorBg = { 153, 153, 0 };
+	SDL_Color colorScoresBg = { 128, 128, 0 };
+	SDL_Rect MainScreenOfMenu_rect = { (int)(SCREEN_WIDTH / 30.0), 0, (int)((11.0 / 15)*SCREEN_WIDTH), SCREEN_HEIGHT };
+	//Repaint all the main screen of menu
+	SDL_SetRenderDrawColor(scene->renderer, 153, 153, 0, 0);
+	SDL_RenderFillRect(scene->renderer, &MainScreenOfMenu_rect);
+	SDL_Texture* TextureMainMenuStart = SDL_CreateTexture(scene->renderer, SDL_PIXELFORMAT_RGB555, SDL_TEXTUREACCESS_TARGET, MainScreenOfMenu_rect.w, MainScreenOfMenu_rect.h);
+
+	//Drawing the main screen of menu
+	SDL_Rect WeaponShop_rect = { (int)((27.0 / 80)*SCREEN_WIDTH), (int)(SCREEN_HEIGHT / 80.0), (int)(SCREEN_WIDTH / 8.0) + 100, (int)(SCREEN_HEIGHT / 20.0) + 50 };
+	SDL_Texture * textureWeaponShop = LoadTexture(scene->renderer, "Sprites/imgWeaponShop.BMP");
+	SDL_RenderCopy(scene->renderer, textureWeaponShop, NULL, &WeaponShop_rect);
+	SDL_DestroyTexture(textureWeaponShop);
+
+	SDL_Rect Player1_rect = { (int)(SCREEN_WIDTH / 30.0), (int)((3.0 / 40)*SCREEN_HEIGHT), (int)(SCREEN_WIDTH / 8.0), (int)(SCREEN_HEIGHT / 20.0) };
+	SDL_Texture * texturePlayer1 = LoadTexture(scene->renderer, "Sprites/imgPlayer1.BMP");
+	SDL_RenderCopy(scene->renderer, texturePlayer1, NULL, &Player1_rect);
+	SDL_DestroyTexture(texturePlayer1);
+
+	SDL_Rect Player2_rect = { (int)((77.0 / 120)*SCREEN_WIDTH), Player1_rect.y, Player1_rect.w, Player1_rect.h };
+	SDL_Texture * texturePlayer2 = LoadTexture(scene->renderer, "Sprites/imgPlayer2.BMP");
+	SDL_RenderCopy(scene->renderer, texturePlayer2, NULL, &Player2_rect);
+	SDL_DestroyTexture(texturePlayer2);
+
+	////Draw the 2 "Name:"
+	//SDL_Rect Name1_rect = { (int)(SCREEN_WIDTH / 30.0), (int)((11.0 / 80)*SCREEN_HEIGHT), (int)(SCREEN_WIDTH / 16.0), (int)(SCREEN_HEIGHT / 20.0) };
+	//SDL_Rect Name2_rect = { (int)((139.0 / 240)*SCREEN_WIDTH), Name1_rect.y, Name1_rect.w, Name1_rect.h };
+	//SDL_Texture * textureName = LoadTexture(scene->renderer, "Sprites/imgName.BMP");
+	//SDL_RenderCopy(scene->renderer, textureName, NULL, &Name1_rect);
+	//SDL_RenderCopy(scene->renderer, textureName, NULL, &Name2_rect);
+	//SDL_DestroyTexture(textureName);
+
+	////Draw the 2 white blancs
+	//SDL_Rect Blanc1_rect = { (int)((23.0 / 240)*SCREEN_WIDTH), Name1_rect.y, (int)(SCREEN_WIDTH / 8.0), Name1_rect.h };
+	//SDL_Rect Blanc2_rect = { Name2_rect.x + Name2_rect.w, Blanc1_rect.y, Blanc1_rect.w, Blanc1_rect.h };
+	//SDL_SetRenderDrawColor(scene->renderer, 255, 255, 255, 0);
+	//SDL_RenderDrawRect(scene->renderer, &Blanc1_rect);
+	//SDL_RenderDrawRect(scene->renderer, &Blanc2_rect);
+
+	//Draw the two containers(black spaces) for the weapons that would be selected
+	SDL_Rect BlancForWeapons1_rect = { (int)(SCREEN_WIDTH / 30.0), (int)((11.0 / 80)*SCREEN_HEIGHT), Player1_rect.w, (int)((3.0 / 5)*SCREEN_HEIGHT) };
+	SDL_Rect BlancForWeapons2_rect = { (int)((77.0 / 120)*SCREEN_WIDTH), BlancForWeapons1_rect.y, BlancForWeapons1_rect.w, BlancForWeapons1_rect.h };
+	SDL_SetRenderDrawColor(scene->renderer, 0, 0, 0, 0);
+	SDL_RenderDrawRect(scene->renderer, &BlancForWeapons1_rect);
+	SDL_RenderDrawRect(scene->renderer, &BlancForWeapons2_rect);
+
+	//Draw the Weapons to the center of the screen for their selection
+	SDL_Rect ChooseWeapons_rect = { (int)((27.0 / 80)*SCREEN_WIDTH), BlancForWeapons1_rect.y, (int)(SCREEN_WIDTH / 7.0), (int)((3.0 / 55)*SCREEN_HEIGHT) };
+	SDL_Texture * textureChooseWeapons = CreateTextureFromText(scene->renderer, scene->font, "Choose Weapons:", colorBlack, colorBg);
+	SDL_RenderCopy(scene->renderer, textureChooseWeapons, NULL, &ChooseWeapons_rect);
+	SDL_DestroyTexture(textureChooseWeapons);
+
+	//Draw landscapes
+	SDL_Rect WordLandscape_rect = { (int)(SCREEN_WIDTH / 30.0), (int)((4.0 / 5)*SCREEN_HEIGHT) - (int)(SCREEN_HEIGHT / 20.0) + 10, (int)(SCREEN_WIDTH / 8.0), (int)(SCREEN_HEIGHT / 15.0) - 10 };
+	SDL_Texture * textureWordLandscape = LoadTexture(scene->renderer, "Sprites/imgLandscape.BMP");
+	SDL_RenderCopy(scene->renderer, textureWordLandscape, NULL, &WordLandscape_rect);
+	SDL_DestroyTexture(textureWordLandscape);
+
+	SDL_Rect Landscape1_rect = { (int)((37.0 / 192)*(SCREEN_WIDTH)), (int)((4.0 / 5)*SCREEN_HEIGHT) - (int)(SCREEN_HEIGHT / 20.0) + 10, (int)((11.0 / 80)*SCREEN_WIDTH) - 70, (int)(SCREEN_HEIGHT / 15.0) - 10 };
+	SDL_Rect Landscape2_rect = { Landscape1_rect.x + Landscape1_rect.w + (int)((11.0 / 320)*(SCREEN_WIDTH)), Landscape1_rect.y, Landscape1_rect.w, Landscape1_rect.h };
+	SDL_Rect Landscape3_rect = { Landscape2_rect.x + Landscape2_rect.w + (int)((11.0 / 320)*(SCREEN_WIDTH)), Landscape2_rect.y, Landscape2_rect.w, Landscape2_rect.h };
+	SDL_Rect Landscape4_rect = { Landscape3_rect.x + Landscape3_rect.w + (int)((11.0 / 320)*(SCREEN_WIDTH)), Landscape3_rect.y, Landscape3_rect.w, Landscape3_rect.h };
+
+	SDL_Texture * textureLandscape1 = LoadTexture(scene->renderer, "Sprites/imgLandscape1.BMP");
+	SDL_Texture * textureLandscape2 = LoadTexture(scene->renderer, "Sprites/imgLandscape2.BMP");
+	SDL_Texture * textureLandscape3 = LoadTexture(scene->renderer, "Sprites/imgLandscape3.BMP");
+	SDL_Texture * textureLandscape4 = LoadTexture(scene->renderer, "Sprites/imgLandscape4.BMP");
+
+	SDL_RenderCopy(scene->renderer, textureLandscape1, NULL, &Landscape1_rect);
+	SDL_RenderCopy(scene->renderer, textureLandscape2, NULL, &Landscape2_rect);
+	SDL_RenderCopy(scene->renderer, textureLandscape3, NULL, &Landscape3_rect);
+	SDL_RenderCopy(scene->renderer, textureLandscape4, NULL, &Landscape4_rect);
+
+	SDL_DestroyTexture(textureLandscape1);
+	SDL_DestroyTexture(textureLandscape2);
+	SDL_DestroyTexture(textureLandscape3);
+	SDL_DestroyTexture(textureLandscape4);
+
+	//Draw Button "Restart"
+	SDL_Color colorButtonRestart = { 128, 128, 0 };
+	SDL_Rect ButtonRestart_rect = { 0, (int)((13.0 / 15)*SCREEN_HEIGHT), (int)(SCREEN_WIDTH / 16.0), (int)(SCREEN_HEIGHT / 15.0) };
+	SDL_Texture * textureButtonRestart = CreateTextureFromText(scene->renderer, scene->font, "Restart", colorBlack, colorButtonRestart);
+	SDL_RenderCopy(scene->renderer, textureButtonRestart, NULL, &ButtonRestart_rect);
+	SDL_DestroyTexture(textureButtonRestart);
+
+	//Draw Button "Randomly"
+
+	SDL_Rect ButtonRandomly_rect = { (int)((27.0 / 80)*SCREEN_WIDTH), ButtonRestart_rect.y, (int)(SCREEN_WIDTH / 7.0), ButtonRestart_rect.h };
+	SDL_Texture * textureButtonRandomly = CreateTextureFromText(scene->renderer, scene->font, "Randomly", colorBlack, colorScoresBg);
+	SDL_RenderCopy(scene->renderer, textureButtonRandomly, NULL, &ButtonRandomly_rect);
+	SDL_DestroyTexture(textureButtonRandomly);
+
+	//Draw Button "Play"
+	SDL_Color colorButtonPlay = { 153, 153, 100 };
+	SDL_Rect ButtonPlay_rect = { (int)((80.0 / 100)*SCREEN_WIDTH) - ButtonRestart_rect.w, ButtonRestart_rect.y, ButtonRestart_rect.w, ButtonRestart_rect.h };
+	SDL_Texture * textureButtonPlay = CreateTextureFromText(scene->renderer, scene->font, "Play", colorBlack, colorButtonPlay);
+	SDL_RenderCopy(scene->renderer, textureButtonPlay, NULL, &ButtonPlay_rect);
+	SDL_DestroyTexture(textureButtonPlay);
+
+	//Draw Weapons 
+	SDL_Rect LollyBomb_rect = { (int)((11.0 / 40)*SCREEN_WIDTH), ChooseWeapons_rect.y + ChooseWeapons_rect.h, (int)(SCREEN_WIDTH / 8.0) - 10, (int)((3.0 / 55)*SCREEN_HEIGHT) - 10 };
+	SDL_Rect Laser_rect = { (int)((40.0 / 100)*SCREEN_WIDTH) + 10, LollyBomb_rect.y, LollyBomb_rect.w, LollyBomb_rect.h };
+	SDL_Rect Ravine_rect = { LollyBomb_rect.x, LollyBomb_rect.y + LollyBomb_rect.h + 10, LollyBomb_rect.w, LollyBomb_rect.h };
+	SDL_Rect LollyBomb2_rect = { Laser_rect.x, Laser_rect.y + Laser_rect.h + 10, Laser_rect.w, Laser_rect.h };
+	SDL_Rect ChineseWall_rect = { LollyBomb_rect.x, Ravine_rect.y + Ravine_rect.h + 10, LollyBomb_rect.w, LollyBomb_rect.h };
+	SDL_Rect Pineaple_rect = { Laser_rect.x, LollyBomb2_rect.y + LollyBomb2_rect.h + 10, Laser_rect.w, Laser_rect.h };
+
+	SDL_Texture * textureLollyBomb = CreateTextureFromText(scene->renderer, scene->font, "Lolly Bomb", colorBlack, colorScoresBg);
+	SDL_Texture * textureLaser = CreateTextureFromText(scene->renderer, scene->font, "Laser", colorBlack, colorScoresBg);
+	SDL_Texture * textureRavine = CreateTextureFromText(scene->renderer, scene->font, "Ravine", colorBlack, colorScoresBg);
+	SDL_Texture * textureLollyBomb2 = CreateTextureFromText(scene->renderer, scene->font, "Lolly Bomb 2.0", colorBlack, colorScoresBg);
+	SDL_Texture * textureChineseWall = CreateTextureFromText(scene->renderer, scene->font, "Chinese Wall", colorBlack, colorScoresBg);
+	SDL_Texture * texturePineaple = CreateTextureFromText(scene->renderer, scene->font, "Pineaple", colorBlack, colorScoresBg);
+
+	clock_t Begin_time = clock();
+	clock_t End_time;
+	do {
+		End_time = clock();
+	} while ((float(End_time - Begin_time) / CLOCKS_PER_SEC) <= 0.5);
+	SDL_RenderCopy(scene->renderer, textureLollyBomb, NULL, &LollyBomb_rect);
+	/*SDL_SetRenderTarget(scene->renderer, TextureMainMenuStart);*/
+	SDL_RenderPresent(scene->renderer);
+	Begin_time = clock();
+	do {
+		End_time = clock();
+	} while ((float(End_time - Begin_time) / CLOCKS_PER_SEC) <= 0.5);
+	SDL_RenderCopy(scene->renderer, textureLaser, NULL, &Laser_rect);
+	/*SDL_SetRenderTarget(scene->renderer, TextureMainMenuStart);*/
+	SDL_RenderPresent(scene->renderer);
+	Begin_time = clock();
+	do {
+		End_time = clock();
+	} while ((float(End_time - Begin_time) / CLOCKS_PER_SEC) <= 0.5);
+	SDL_RenderCopy(scene->renderer, textureRavine, NULL, &Ravine_rect);
+	/*SDL_SetRenderTarget(scene->renderer, TextureMainMenuStart);*/
+	SDL_RenderPresent(scene->renderer);
+	Begin_time = clock();
+	do {
+		End_time = clock();
+	} while ((float(End_time - Begin_time) / CLOCKS_PER_SEC) <= 0.5);
+	SDL_RenderCopy(scene->renderer, textureLollyBomb2, NULL, &LollyBomb2_rect);
+	/*SDL_SetRenderTarget(scene->renderer, TextureMainMenuStart);*/
+	SDL_RenderPresent(scene->renderer);
+	Begin_time = clock();
+	do {
+		End_time = clock();
+	} while ((float(End_time - Begin_time) / CLOCKS_PER_SEC) <= 0.5);
+	SDL_RenderCopy(scene->renderer, textureChineseWall, NULL, &ChineseWall_rect);
+	/*SDL_SetRenderTarget(scene->renderer, TextureMainMenuStart);*/
+	SDL_RenderPresent(scene->renderer);
+	Begin_time = clock();
+	do {
+		End_time = clock();
+	} while ((float(End_time - Begin_time) / CLOCKS_PER_SEC) <= 0.5);
+	SDL_RenderCopy(scene->renderer, texturePineaple, NULL, &Pineaple_rect);
+	SDL_RenderPresent(scene->renderer);
+
+	SDL_DestroyTexture(textureLollyBomb);
+	SDL_DestroyTexture(textureLaser);
+	SDL_DestroyTexture(textureRavine);
+	SDL_DestroyTexture(textureLollyBomb2);
+	SDL_DestroyTexture(textureChineseWall);
+	SDL_DestroyTexture(texturePineaple);
+
+
+	//Interactions on the Third Screen
+	SDL_Rect ButtonQuitTheGame_rect = { (int)((71.0 / 90)*SCREEN_WIDTH), (int)((14.0 / 15)*SCREEN_HEIGHT), (int)(SCREEN_WIDTH / 8.0), (int)(SCREEN_HEIGHT / 15.0) };
+	scene->quitThirdScreen = false;
+	scene->playerLap = 1;
+	bool Choosed_LollyBomb = false, Choosed_Laser = false, Choosed_Ravine = false, Choosed_LollyBomb2 = false, Choosed_ChineseWall = false, Choosed_Pineaple = false;
+	scene->players[0].headWeapon = NULL;
+	scene->players[0].tailWeapon = NULL;
+	scene->players[1].headWeapon = NULL;
+	scene->players[1].tailWeapon = NULL;
+
+	////Working On The Names
+	//
+	//Begin_time = clock();
+	//do {
+	//	End_time = clock();
+	//} while ((float(End_time - Begin_time) / CLOCKS_PER_SEC) <= 0.5);
+	//bool NamesEntered = false, quit = false;
+	//const char *Msg1;
+	//Msg1 = "Enter Name Player 1";
+	//DrawMsgOnBottonScreen(scene, Msg1);
+	//SDL_RenderPresent(scene->renderer);
+	///*
+	//while (quit != true)
+	//{
+	//	while (SDL_PollEvent(&scene->event))
+	//	{
+	//		if (scene->event.type == SDL_QUIT)ExitWhileInMenu(scene);
+	//		if (scene->event.type == SDL_MOUSEBUTTONDOWN && scene->event.button.button == SDL_BUTTON_LEFT)
+	//		{
+	//			//Event for button "Quit The Game"
+	//			if ((scene->event.button.x >= ButtonQuitTheGame_rect.x) && (scene->event.button.x <= ButtonQuitTheGame_rect.x + ButtonQuitTheGame_rect.w)
+	//				&& (scene->event.button.y >= ButtonQuitTheGame_rect.y) && (scene->event.button.y <= ButtonQuitTheGame_rect.y + ButtonQuitTheGame_rect.h))
+	//				ExitWhileInMenu(scene);
+	//			//Events for reading and printing the name 1
+	//			if ((scene->event.button.x >= Blanc1_rect.x) && (scene->event.button.x <= Blanc1_rect.x + Blanc1_rect.w)
+	//				&& (scene->event.button.y >= Blanc1_rect.y) && (scene->event.button.y <= Blanc1_rect.y + Blanc1_rect.h))
+	//			{
+	//				WorkingOnName(scene, &Blanc1_rect, 0);
+	//				quit = true;
+	//				break;
+	//			}
+	//		}
+	//	}
+	//}
+	//*/
+	//NamesEntered = true;
+
+
+
+	//Event for Choosing Weapons
+	scene->players[0].NbrWeapons = 0;
+	scene->players[1].NbrWeapons = 0;
+	const char *Msg3;
+	Msg3 = "Choose Weapons...";
+	DrawMsgOnBottonScreen(scene, Msg3);
+	SDL_RenderPresent(scene->renderer);
+	scene->playerLap = 1;
+	bool WeaponsChoosed = false, Selected_A_Weapon = false;
+	while (WeaponsChoosed != true)
+	{
+		while (SDL_PollEvent(&scene->event))
+		{
+			if (scene->event.type == SDL_QUIT)ExitWhileInMenu(scene);
+			if (scene->event.type == SDL_MOUSEBUTTONDOWN && scene->event.button.button == SDL_BUTTON_LEFT)
+			{
+				//Event for button "Quit The Game"
+				if ((scene->event.button.x >= ButtonQuitTheGame_rect.x) && (scene->event.button.x <= ButtonQuitTheGame_rect.x + ButtonQuitTheGame_rect.w)
+					&& (scene->event.button.y >= ButtonQuitTheGame_rect.y) && (scene->event.button.y <= ButtonQuitTheGame_rect.y + ButtonQuitTheGame_rect.h))
+					ExitWhileInMenu(scene);
+				////Event for the Weapons
+				//If Cliked on Lolly Bomb
+				if ((scene->event.button.x >= LollyBomb_rect.x) && (scene->event.button.x <= LollyBomb_rect.x + LollyBomb_rect.w)
+					&& (scene->event.button.y >= LollyBomb_rect.y) && (scene->event.button.y <= LollyBomb_rect.y + LollyBomb_rect.h) && Choosed_LollyBomb != true)
+				{
+					Weapon *weapon = NULL;
+					weapon = (Weapon *)malloc(sizeof(Weapon));
+					strcpy_s(weapon->name, NAME_LENGTH, "Lolly Bomb");
+					weapon->score = 1;
+					weapon->angle = 0;
+					weapon->gravitatin = 0;
+					weapon->texture = LoadTexture(scene->renderer, "Sprites/weapon1.bmp");
+					PushWeapon(weapon, &scene->players[scene->playerLap - 1].headWeapon, &scene->players[scene->playerLap - 1].tailWeapon);
+					Choosed_LollyBomb = true;
+					Selected_A_Weapon = true;
+					SDL_SetRenderDrawColor(scene->renderer, 153, 153, 0, 0);
+					SDL_RenderFillRect(scene->renderer, &LollyBomb_rect);
+					DrawWeaponInsidePanel(scene, " Lolly Bomb ");
+					if (Choosed_LollyBomb == true && Choosed_Laser == true && Choosed_Ravine == true && Choosed_LollyBomb2 == true && Choosed_ChineseWall == true && Choosed_Pineaple == true)
+					{
+						WeaponsChoosed = true;
+						const char *Msg4;
+						Msg4 = "Choose Landscape...";
+						DrawMsgOnBottonScreen(scene, Msg4);
+					}
+					SDL_RenderPresent(scene->renderer);
+					break;
+
+				}
+				//If Cliked on Laser
+				if ((scene->event.button.x >= Laser_rect.x) && (scene->event.button.x <= Laser_rect.x + Laser_rect.w)
+					&& (scene->event.button.y >= Laser_rect.y) && (scene->event.button.y <= Laser_rect.y + Laser_rect.h) && Choosed_Laser != true)
+				{
+					Weapon *weapon = NULL;
+					weapon = (Weapon *)malloc(sizeof(Weapon));
+					strcpy_s(weapon->name, NAME_LENGTH, "Laser");
+					weapon->score = 5;
+					weapon->angle = 0;
+					weapon->gravitatin = 0;
+					weapon->texture = LoadTexture(scene->renderer, "Sprites/weapon1.bmp");
+					PushWeapon(weapon, &scene->players[scene->playerLap - 1].headWeapon, &scene->players[scene->playerLap - 1].tailWeapon);
+					Choosed_Laser = true;
+					Selected_A_Weapon = true;
+					SDL_SetRenderDrawColor(scene->renderer, 153, 153, 0, 0);
+					SDL_RenderFillRect(scene->renderer, &Laser_rect);
+					DrawWeaponInsidePanel(scene, " Laser ");
+					SDL_RenderPresent(scene->renderer);
+					if (Choosed_LollyBomb == true && Choosed_Laser == true && Choosed_Ravine == true && Choosed_LollyBomb2 == true && Choosed_ChineseWall == true && Choosed_Pineaple == true)
+					{
+						WeaponsChoosed = true;
+						const char *Msg4;
+						Msg4 = "Choose Landscape...";
+						DrawMsgOnBottonScreen(scene, Msg4);
+					}
+					SDL_RenderPresent(scene->renderer);
+					break;
+				}
+				//If Cliked on Ravine
+				if ((scene->event.button.x >= Ravine_rect.x) && (scene->event.button.x <= Ravine_rect.x + Ravine_rect.w)
+					&& (scene->event.button.y >= Ravine_rect.y) && (scene->event.button.y <= Ravine_rect.y + Ravine_rect.h) && Choosed_Ravine != true)
+				{
+					Weapon *weapon = NULL;
+					weapon = (Weapon *)malloc(sizeof(Weapon));
+					strcpy_s(weapon->name, NAME_LENGTH, "Ravine");
+					weapon->score = 0;
+					weapon->angle = 0;
+					weapon->gravitatin = 0;
+					weapon->texture = LoadTexture(scene->renderer, "Sprites/weapon1.bmp");
+					PushWeapon(weapon, &scene->players[scene->playerLap - 1].headWeapon, &scene->players[scene->playerLap - 1].tailWeapon);
+					/*PushWeapon(weapon, &(scene->players)[scene->playerLap - 1].headWeapon, &(scene->players)[scene->playerLap - 1].tailWeapon);*/
+					Choosed_Ravine = true;
+					Selected_A_Weapon = true;
+					SDL_SetRenderDrawColor(scene->renderer, 153, 153, 0, 0);
+					SDL_RenderFillRect(scene->renderer, &Ravine_rect);
+					DrawWeaponInsidePanel(scene, " Ravine ");
+					SDL_RenderPresent(scene->renderer);
+					if (Choosed_LollyBomb == true && Choosed_Laser == true && Choosed_Ravine == true && Choosed_LollyBomb2 == true && Choosed_ChineseWall == true && Choosed_Pineaple == true)
+					{
+						WeaponsChoosed = true;
+						const char *Msg4;
+						Msg4 = "Choose Landscape...";
+						DrawMsgOnBottonScreen(scene, Msg4);
+					}
+					SDL_RenderPresent(scene->renderer);
+					break;
+				}
+				//If Cliked on Lolly Bomb 2.0
+				if ((scene->event.button.x >= LollyBomb2_rect.x) && (scene->event.button.x <= LollyBomb2_rect.x + LollyBomb2_rect.w)
+					&& (scene->event.button.y >= LollyBomb2_rect.y) && (scene->event.button.y <= LollyBomb2_rect.y + LollyBomb2_rect.h) && Choosed_LollyBomb2 != true)
+				{
+					Weapon *weapon = NULL;
+					weapon = (Weapon *)malloc(sizeof(Weapon));
+					strcpy_s(weapon->name, NAME_LENGTH, "Lolly Bomb 2.0");
+					weapon->score = 2;
+					weapon->angle = 0;
+					weapon->gravitatin = 0;
+					weapon->texture = LoadTexture(scene->renderer, "Sprites/weapon1.bmp");
+					PushWeapon(weapon, &scene->players[scene->playerLap - 1].headWeapon, &scene->players[scene->playerLap - 1].tailWeapon);
+					/*PushWeapon(weapon, &(scene->players)[scene->playerLap - 1].headWeapon, &(scene->players)[scene->playerLap - 1].tailWeapon);*/
+					Choosed_LollyBomb2 = true;
+					Selected_A_Weapon = true;
+					SDL_SetRenderDrawColor(scene->renderer, 153, 153, 0, 0);
+					SDL_RenderFillRect(scene->renderer, &LollyBomb2_rect);
+					DrawWeaponInsidePanel(scene, " Lolly Bomb 2.0 ");
+					SDL_RenderPresent(scene->renderer);
+					if (Choosed_LollyBomb == true && Choosed_Laser == true && Choosed_Ravine == true && Choosed_LollyBomb2 == true && Choosed_ChineseWall == true && Choosed_Pineaple == true)
+					{
+						WeaponsChoosed = true;
+						const char *Msg4;
+						Msg4 = "Choose Landscape...";
+						DrawMsgOnBottonScreen(scene, Msg4);
+					}
+					SDL_RenderPresent(scene->renderer);
+					break;
+				}
+				//If Cliked on Chinese Wall 
+				if ((scene->event.button.x >= ChineseWall_rect.x) && (scene->event.button.x <= ChineseWall_rect.x + ChineseWall_rect.w)
+					&& (scene->event.button.y >= ChineseWall_rect.y) && (scene->event.button.y <= ChineseWall_rect.y + ChineseWall_rect.h) && Choosed_ChineseWall != true)
+				{
+					Weapon *weapon = NULL;
+					weapon = (Weapon *)malloc(sizeof(Weapon));
+					strcpy_s(weapon->name, NAME_LENGTH, "Chinese Wall");
+					weapon->score = 0;
+					weapon->angle = 0;
+					weapon->gravitatin = 0;
+					weapon->texture = LoadTexture(scene->renderer, "Sprites/weapon1.bmp");
+					PushWeapon(weapon, &scene->players[scene->playerLap - 1].headWeapon, &scene->players[scene->playerLap - 1].tailWeapon);
+					/*PushWeapon(weapon, &(scene->players)[scene->playerLap - 1].headWeapon, &(scene->players)[scene->playerLap - 1].tailWeapon);*/
+					Choosed_ChineseWall = true;
+					Selected_A_Weapon = true;
+					SDL_SetRenderDrawColor(scene->renderer, 153, 153, 0, 0);
+					SDL_RenderFillRect(scene->renderer, &ChineseWall_rect);
+					DrawWeaponInsidePanel(scene, " Chinese Wall ");
+					SDL_RenderPresent(scene->renderer);
+					if (Choosed_LollyBomb == true && Choosed_Laser == true && Choosed_Ravine == true && Choosed_LollyBomb2 == true && Choosed_ChineseWall == true && Choosed_Pineaple == true)
+					{
+						WeaponsChoosed = true;
+						const char *Msg4;
+						Msg4 = "Choose Landscape...";
+						DrawMsgOnBottonScreen(scene, Msg4);
+					}
+					SDL_RenderPresent(scene->renderer);
+					break;
+				}
+				//If Cliked on Pineaple
+				if ((scene->event.button.x >= Pineaple_rect.x) && (scene->event.button.x <= Pineaple_rect.x + Pineaple_rect.w)
+					&& (scene->event.button.y >= Pineaple_rect.y) && (scene->event.button.y <= Pineaple_rect.y + Pineaple_rect.h) && Choosed_Pineaple != true)
+				{
+					Weapon *weapon = NULL;
+					weapon = (Weapon *)malloc(sizeof(Weapon));
+					strcpy_s(weapon->name, NAME_LENGTH, "Pineaple");
+					weapon->score = 4;
+					weapon->angle = 0;
+					weapon->gravitatin = 0;
+					weapon->texture = LoadTexture(scene->renderer, "Sprites/weapon1.bmp");
+					PushWeapon(weapon, &scene->players[scene->playerLap - 1].headWeapon, &scene->players[scene->playerLap - 1].tailWeapon);
+					/*PushWeapon(weapon, &(scene->players)[scene->playerLap - 1].headWeapon, &(scene->players)[scene->playerLap - 1].tailWeapon);*/
+					Choosed_Pineaple = true;
+					Selected_A_Weapon = true;
+					SDL_SetRenderDrawColor(scene->renderer, 153, 153, 0, 0);
+					SDL_RenderFillRect(scene->renderer, &Pineaple_rect);
+					DrawWeaponInsidePanel(scene, " Pineaple ");
+					SDL_RenderPresent(scene->renderer);
+					if (Choosed_LollyBomb == true && Choosed_Laser == true && Choosed_Ravine == true && Choosed_LollyBomb2 == true && Choosed_ChineseWall == true && Choosed_Pineaple == true)
+					{
+						WeaponsChoosed = true;
+						const char *Msg4;
+						Msg4 = "Choose Landscape...";
+						DrawMsgOnBottonScreen(scene, Msg4);
+					}
+					SDL_RenderPresent(scene->renderer);
+					break;
+				}
+				//If all weapons have been choosed
+			}
+		}
+		if (Selected_A_Weapon == true && scene->playerLap == 1)
+		{
+			scene->playerLap = 2;
+			Selected_A_Weapon = false;
+		}
+		else if (Selected_A_Weapon == true && scene->playerLap == 2)
+		{
+			scene->playerLap = 1;
+			Selected_A_Weapon = false;
+		}
+	}
+
+	//Event for choosing Lanscape
+	SDL_RenderPresent(scene->renderer);
+	bool LandscapeChoosed = false;
+	while (LandscapeChoosed != true)
+	{
+		while (SDL_PollEvent(&scene->event))
+		{
+			if (scene->event.type == SDL_QUIT)ExitWhileInMenu(scene);
+			if (scene->event.type == SDL_MOUSEBUTTONDOWN && scene->event.button.button == SDL_BUTTON_LEFT)
+			{
+				//Event for button "Quit The Game"
+				if ((scene->event.button.x >= ButtonQuitTheGame_rect.x) && (scene->event.button.x <= ButtonQuitTheGame_rect.x + ButtonQuitTheGame_rect.w)
+					&& (scene->event.button.y >= ButtonQuitTheGame_rect.y) && (scene->event.button.y <= ButtonQuitTheGame_rect.y + ButtonQuitTheGame_rect.h))
+					ExitWhileInMenu(scene);
+				//Event for the Lanscape
+				if ((scene->event.button.x >= Landscape1_rect.x) && (scene->event.button.x <= Landscape1_rect.x + Landscape1_rect.w)
+					&& (scene->event.button.y >= Landscape1_rect.y) && (scene->event.button.y <= Landscape1_rect.y + Landscape1_rect.h))
+				{
+					scene->landscapeType = 1;
+					InitLandscape(&scene->landscape, &scene->defaultLandscape, scene->landscapeType);
+					LandscapeChoosed = true;
+					break;
+				}
+				else
+				{
+					if ((scene->event.button.x >= Landscape2_rect.x) && (scene->event.button.x <= Landscape2_rect.x + Landscape2_rect.w)
+						&& (scene->event.button.y >= Landscape2_rect.y) && (scene->event.button.y <= Landscape2_rect.y + Landscape2_rect.h))
+					{
+						scene->landscapeType = 2;
+						InitLandscape(&scene->landscape, &scene->defaultLandscape, scene->landscapeType);
+						LandscapeChoosed = true;
+						break;
+					}
+					if ((scene->event.button.x >= Landscape3_rect.x) && (scene->event.button.x <= Landscape3_rect.x + Landscape3_rect.w)
+						&& (scene->event.button.y >= Landscape3_rect.y) && (scene->event.button.y <= Landscape3_rect.y + Landscape3_rect.h))
+					{
+						scene->landscapeType = 3;
+						InitLandscape(&scene->landscape, &scene->defaultLandscape, scene->landscapeType);
+						LandscapeChoosed = true;
+						break;
+					}
+					if ((scene->event.button.x >= Landscape4_rect.x) && (scene->event.button.x <= Landscape4_rect.x + Landscape4_rect.w)
+						&& (scene->event.button.y >= Landscape4_rect.y) && (scene->event.button.y <= Landscape4_rect.y + Landscape4_rect.h))
+					{
+						scene->landscapeType = 4;
+						InitLandscape(&scene->landscape, &scene->defaultLandscape, scene->landscapeType);
+						LandscapeChoosed = true;
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	//Event for clicking on button "Play"
+	if (WeaponsChoosed == true && LandscapeChoosed == true)
+	{
+		//Change the color of the button "Play" and check for the click on it.
+		const char *Msg5;
+		Msg5 = "Click On Play";
+		DrawMsgOnBottonScreen(scene, Msg5);
+		SDL_Color colorButtonPlay2 = { 0, 102, 0 };
+		SDL_SetRenderDrawColor(scene->renderer, 0, 102, 0, 0);
+		SDL_RenderFillRect(scene->renderer, &ButtonPlay_rect);
+		SDL_Texture * textureButtonPlay2 = CreateTextureFromText(scene->renderer, scene->font, "Play", colorBlack, colorButtonPlay2);
+		SDL_RenderCopy(scene->renderer, textureButtonPlay2, NULL, &ButtonPlay_rect);
+		SDL_DestroyTexture(textureButtonPlay);
+		SDL_RenderPresent(scene->renderer);
+
+		bool ClickOnPlay = false;
+		while (ClickOnPlay != true)
+		{
+			while (SDL_PollEvent(&scene->event))
+			{
+				if (scene->event.type == SDL_QUIT)ExitWhileInMenu(scene);
+				if (scene->event.type == SDL_MOUSEBUTTONDOWN && scene->event.button.button == SDL_BUTTON_LEFT)
+				{
+					//Click on "Quit The Game"
+					if ((scene->event.button.x >= ButtonQuitTheGame_rect.x) && (scene->event.button.x <= ButtonQuitTheGame_rect.x + ButtonQuitTheGame_rect.w)
+						&& (scene->event.button.y >= ButtonQuitTheGame_rect.y) && (scene->event.button.y <= ButtonQuitTheGame_rect.y + ButtonQuitTheGame_rect.h))
+						ExitWhileInMenu(scene);
+					//Click On "Play"
+					if ((scene->event.button.x >= ButtonPlay_rect.x) && (scene->event.button.x <= ButtonPlay_rect.x + ButtonPlay_rect.w)
+						&& (scene->event.button.y >= ButtonPlay_rect.y) && (scene->event.button.y <= ButtonPlay_rect.y + ButtonPlay_rect.h))
+					{
+						ClickOnPlay = true;
+						scene->quitThirdScreen = true;
+						scene->quitSecondScreen = true;
+						break;
+					}
+				}
+			}
+		}
+	}
+}
+
+void DrawWeaponInsidePanel(Scene *scene, const char *NameWeapon)
+{
+	SDL_Color colorBlack = { 0, 0, 0 };
+	SDL_Color colorScoresBg = { 128, 128, 0 };
+	SDL_Rect Player1_rect = { (int)(SCREEN_WIDTH / 30.0), (int)((3.0 / 40)*SCREEN_HEIGHT), (int)(SCREEN_WIDTH / 8.0), (int)(SCREEN_HEIGHT / 20.0) };
+	SDL_Rect Player2_rect = { (int)((77.0 / 120)*SCREEN_WIDTH), Player1_rect.y, Player1_rect.w, Player1_rect.h };
+	SDL_Rect BlancForWeapons1_rect = { Player1_rect.x, (int)((11.0 / 80)*SCREEN_HEIGHT), Player1_rect.w, (int)((3.0 / 5)*SCREEN_HEIGHT) };
+	SDL_Rect BlancForWeapons2_rect = { Player2_rect.x, BlancForWeapons1_rect.y, BlancForWeapons1_rect.w, BlancForWeapons1_rect.h };
+	SDL_Rect WeaponOnPlayerList_rect;
+	SDL_Texture * textureWeaponName;
+	if (scene->playerLap == 1)
+	{
+		WeaponOnPlayerList_rect = { BlancForWeapons1_rect.x, BlancForWeapons1_rect.y + scene->players[scene->playerLap - 1].NbrWeapons * (int)(BlancForWeapons1_rect.h / 10.0), BlancForWeapons1_rect.w,  (int)(BlancForWeapons1_rect.h / 10.0) };
+		textureWeaponName = CreateTextureFromText(scene->renderer, scene->font, NameWeapon, colorBlack, colorScoresBg);
+		SDL_RenderCopy(scene->renderer, textureWeaponName, NULL, &WeaponOnPlayerList_rect);
+		SDL_DestroyTexture(textureWeaponName);
+	}
+	if (scene->playerLap == 2)
+	{
+		WeaponOnPlayerList_rect = { BlancForWeapons2_rect.x, BlancForWeapons2_rect.y + scene->players[scene->playerLap - 1].NbrWeapons * (int)(BlancForWeapons2_rect.h / 10.0), BlancForWeapons2_rect.w,  (int)(BlancForWeapons2_rect.h / 10.0) };
+		textureWeaponName = CreateTextureFromText(scene->renderer, scene->font, NameWeapon, colorBlack, colorScoresBg);
+		SDL_RenderCopy(scene->renderer, textureWeaponName, NULL, &WeaponOnPlayerList_rect);
+		SDL_DestroyTexture(textureWeaponName);
+	}
+	scene->players[scene->playerLap - 1].NbrWeapons++;
+}
+
+/*
+//There is a closing } but no opening {, This is why there is a signal of error on this code, it's just a part(end) of a a function CreateAndDraw2PlayersMenu().
+while (scene->quitThirdScreen != true)
+{
+while (SDL_PollEvent(&scene->event))
+{
+if (scene->event.type == SDL_QUIT)ExitWhileInMenu(scene);
+if (scene->event.type == SDL_MOUSEBUTTONDOWN && scene->event.button.button == SDL_BUTTON_LEFT)
+{
+//Event for button "Quit The Game"
+if ((scene->event.button.x >= ButtonQuitTheGame_rect.x) && (scene->event.button.x <= ButtonQuitTheGame_rect.x + ButtonQuitTheGame_rect.w)
+&& (scene->event.button.y >= ButtonQuitTheGame_rect.y) && (scene->event.button.y <= ButtonQuitTheGame_rect.y + ButtonQuitTheGame_rect.h))
+ExitWhileInMenu(scene);
+//Event for landscape
+DrawMsgOnBottonScreen(scene, "Choose Landscape...");
+if ((scene->event.button.x >= Landscape1_rect.x) && (scene->event.button.x <= Landscape1_rect.x + Landscape1_rect.w)
+&& (scene->event.button.y >= Landscape1_rect.y) && (scene->event.button.y <= Landscape1_rect.y + Landscape1_rect.h))
+{
+scene->landscapeType = 1;
+InitLandscape(&scene->landscape, &scene->defaultLandscape, scene->landscapeType);
+}
+else
+{
+if ((scene->event.button.x >= Landscape2_rect.x) && (scene->event.button.x <= Landscape2_rect.x + Landscape2_rect.w)
+&& (scene->event.button.y >= Landscape2_rect.y) && (scene->event.button.y <= Landscape2_rect.y + Landscape2_rect.h))
+{
+scene->landscapeType = 2;
+InitLandscape(&scene->landscape, &scene->defaultLandscape, scene->landscapeType);
+}
+if ((scene->event.button.x >= Landscape3_rect.x) && (scene->event.button.x <= Landscape3_rect.x + Landscape3_rect.w)
+&& (scene->event.button.y >= Landscape3_rect.y) && (scene->event.button.y <= Landscape3_rect.y + Landscape3_rect.h))
+{
+scene->landscapeType = 3;
+InitLandscape(&scene->landscape, &scene->defaultLandscape, scene->landscapeType);
+}
+if ((scene->event.button.x >= Landscape4_rect.x) && (scene->event.button.x <= Landscape4_rect.x + Landscape4_rect.w)
+&& (scene->event.button.y >= Landscape4_rect.y) && (scene->event.button.y <= Landscape4_rect.y + Landscape4_rect.h))
+{
+scene->landscapeType = 4;
+InitLandscape(&scene->landscape, &scene->defaultLandscape, scene->landscapeType);
+}
+
+}
+
+
+
+//Event for name of player 1
+if ((scene->event.button.x >= Blanc1_rect.x) && (scene->event.button.x <= Blanc1_rect.x + Blanc1_rect.w)
+&& (scene->event.button.y >= Blanc1_rect.y) && (scene->event.button.y <= Blanc1_rect.y + Blanc1_rect.h))
+{
+SDL_SetRenderDrawColor(scene->renderer, 255, 255, 255, 0);
+SDL_RenderFillRect(scene->renderer, &Blanc1_rect);
+
+scene->players[0].name = "";
+char *Text = "";
+int index = 0;
+bool done = false;
+while (done != true) {
+do {
+SDL_StartTextInput();
+while (SDL_PollEvent(&scene->event))
+{
+switch (scene->event.type)
+{
+case SDL_QUIT: ExitWhileInMenu(scene); break;
+case SDL_TEXTINPUT:
+
+int r = strcat_s(Text, sizeof(char), scene->event.text.text);
+printf_s("Name of player %d = %c r = %d", scene->playerLap, Text, r);
+if (r != 0) printf_s("Error while joining the letter to the name");
+SDL_SetRenderDrawColor(scene->renderer, 0, 0, 0, 0);
+SDL_Rect Symbol_rect = { Blanc1_rect.x + index * (int)(Blanc1_rect.w / 10.0 ) + 1, Blanc1_rect.y + 1, (int)(Blanc1_rect.w / 10.0) - 3, Blanc1_rect.h - 2 };
+SDL_Texture * textureSymbol = CreateTextureFromText(scene->renderer, scene->font, scene->event.text.text, colorBlack, colorWhite);
+SDL_RenderCopy(scene->renderer, textureSymbol, NULL, &Symbol_rect);
+SDL_RenderPresent(scene->renderer);
+SDL_DestroyTexture(textureSymbol);
+//SDL_RenderPresent(scene->renderer);
+index++;
+break;
+}
+}
+SDL_StopTextInput();
+} while (!(scene->event.type == SDL_MOUSEBUTTONDOWN && scene->event.button.button == SDL_BUTTON_LEFT &&
+((scene->event.button.x >= Blanc1_rect.x) && (scene->event.button.x <= Blanc1_rect.x + Blanc1_rect.w) &&
+(scene->event.button.y >= Blanc1_rect.y) && (scene->event.button.y <= Blanc1_rect.y + Blanc1_rect.h)))
+&& index < 10);
+done = true;
+}
+scene->players[0].name = Text;
+}
+//Event for name of player 2
+if ((scene->event.button.x >= Blanc2_rect.x) && (scene->event.button.x <= Blanc2_rect.x + Blanc2_rect.w)
+&& (scene->event.button.y >= Blanc2_rect.y) && (scene->event.button.y <= Blanc2_rect.y + Blanc2_rect.h))
+{
+SDL_SetRenderDrawColor(scene->renderer, 255, 255, 255, 0);
+SDL_RenderFillRect(scene->renderer, &Blanc2_rect);
+
+scene->players[1].name = "";
+char *Text = "";
+int index = 0;
+bool done = false;
+while (done != true) {
+do {
+SDL_StartTextInput();
+while (SDL_PollEvent(&scene->event))
+{
+switch (scene->event.type)
+{
+case SDL_QUIT: ExitWhileInMenu(scene); break;
+case SDL_TEXTINPUT:
+int r = strcat_s(Text, sizeof(char), scene->event.text.text);
+if (r != 0) printf_s("Error while joining the letter to the name");
+SDL_SetRenderDrawColor(scene->renderer, 0, 0, 0, 0);
+SDL_Rect Symbol_rect = { Blanc2_rect.x + index * (int)(Blanc2_rect.w / 10.0) + 1, Blanc2_rect.y + 1, (int)(Blanc2_rect.w / 10.0) - 3, Blanc2_rect.h - 2 };
+SDL_Texture * textureSymbol = CreateTextureFromText(scene->renderer, scene->font, scene->event.text.text, colorBlack, colorWhite);
+SDL_RenderCopy(scene->renderer, textureSymbol, NULL, &Symbol_rect);
+SDL_RenderPresent(scene->renderer);
+SDL_DestroyTexture(textureSymbol);
+//SDL_RenderPresent(scene->renderer);
+index++;
+break;
+}
+}
+SDL_StopTextInput();
+} while (!(scene->event.type == SDL_MOUSEBUTTONDOWN && scene->event.button.button == SDL_BUTTON_LEFT &&
+((scene->event.button.x >= Blanc2_rect.x) && (scene->event.button.x <= Blanc2_rect.x + Blanc2_rect.w) &&
+(scene->event.button.y >= Blanc2_rect.y) && (scene->event.button.y <= Blanc2_rect.y + Blanc2_rect.h)))
+&& index < 10);
+done = true;
+}
+scene->players[1].name = Text;
+}
+
+
+////Event for the Weapons
+DrawMsgOnBottonScreen(scene, "Choose Weapons...");
+//If Cliked on Lolly Bomb
+if ((scene->event.button.x >= LollyBomb_rect.x) && (scene->event.button.x <= LollyBomb_rect.x + LollyBomb_rect.w)
+&& (scene->event.button.y >= LollyBomb_rect.y) && (scene->event.button.y <= LollyBomb_rect.y + LollyBomb_rect.h) && Choosed_LollyBomb != true)
+{
+Weapon *weapon = NULL;
+weapon = (Weapon *)malloc(sizeof(Weapon));
+weapon->name = "Lolly Bomb";
+weapon->score = 1;
+weapon->angle = 0;
+weapon->gravitatin = 0;
+weapon->texture = LoadTexture(scene->renderer, "Sprites/weapon1.bmp");
+PushWeapon(weapon, &scene->players[scene->playerLap - 1].headWeapon, &scene->players[scene->playerLap - 1].tailWeapon);
+//PushWeapon(weapon, &(scene->players)[scene->playerLap - 1].headWeapon, &(scene->players)[scene->playerLap - 1].tailWeapon);
+Choosed_LollyBomb = true;
+SDL_SetRenderDrawColor(scene->renderer, 153, 153, 0, 0);
+SDL_RenderFillRect(scene->renderer, &LollyBomb_rect);
+//SDL_RenderPresent(scene->renderer);
+}
+//If Cliked on Laser
+if ((scene->event.button.x >= Laser_rect.x) && (scene->event.button.x <= Laser_rect.x + Laser_rect.w)
+&& (scene->event.button.y >= Laser_rect.y) && (scene->event.button.y <= Laser_rect.y + Laser_rect.h) && Choosed_Laser != true)
+{
+Weapon *weapon = NULL;
+weapon = (Weapon *)malloc(sizeof(Weapon));
+weapon->name = "Laser";
+weapon->score = 5;
+weapon->angle = 0;
+weapon->gravitatin = 0;
+weapon->texture = LoadTexture(scene->renderer, "Sprites/weapon1.bmp");
+PushWeapon(weapon, &scene->players[scene->playerLap - 1].headWeapon, &scene->players[scene->playerLap - 1].tailWeapon);
+//PushWeapon(weapon, &(scene->players)[scene->playerLap - 1].headWeapon, &(scene->players)[scene->playerLap - 1].tailWeapon);
+Choosed_Laser = true;
+SDL_SetRenderDrawColor(scene->renderer, 153, 153, 0, 0);
+SDL_RenderFillRect(scene->renderer, &Laser_rect);
+//SDL_RenderPresent(scene->renderer);
+
+}
+//If Cliked on Ravine
+if ((scene->event.button.x >= Ravine_rect.x) && (scene->event.button.x <= Ravine_rect.x + Ravine_rect.w)
+&& (scene->event.button.y >= Ravine_rect.y) && (scene->event.button.y <= Ravine_rect.y + Ravine_rect.h) && Choosed_Ravine != true)
+{
+Weapon *weapon = NULL;
+weapon = (Weapon *)malloc(sizeof(Weapon));
+weapon->name = "Ravine";
+weapon->score = 0;
+weapon->angle = 0;
+weapon->gravitatin = 0;
+weapon->texture = LoadTexture(scene->renderer, "Sprites/weapon1.bmp");
+PushWeapon(weapon, &scene->players[scene->playerLap - 1].headWeapon, &scene->players[scene->playerLap - 1].tailWeapon);
+//PushWeapon(weapon, &(scene->players)[scene->playerLap - 1].headWeapon, &(scene->players)[scene->playerLap - 1].tailWeapon);
+Choosed_Ravine = true;
+SDL_SetRenderDrawColor(scene->renderer, 153, 153, 0, 0);
+SDL_RenderFillRect(scene->renderer, &Ravine_rect);
+//SDL_RenderPresent(scene->renderer);
+}
+//If Cliked on Lolly Bomb 2.0
+if ((scene->event.button.x >= LollyBomb2_rect.x) && (scene->event.button.x <= LollyBomb2_rect.x + LollyBomb2_rect.w)
+&& (scene->event.button.y >= LollyBomb2_rect.y) && (scene->event.button.y <= LollyBomb2_rect.y + LollyBomb2_rect.h) && Choosed_LollyBomb2 != true)
+{
+Weapon *weapon = NULL;
+weapon = (Weapon *)malloc(sizeof(Weapon));
+weapon->name = "Lolly Bomb 2.0";
+weapon->score = 2;
+weapon->angle = 0;
+weapon->gravitatin = 0;
+weapon->texture = LoadTexture(scene->renderer, "Sprites/weapon1.bmp");
+PushWeapon(weapon, &scene->players[scene->playerLap - 1].headWeapon, &scene->players[scene->playerLap - 1].tailWeapon);
+//PushWeapon(weapon, &(scene->players)[scene->playerLap - 1].headWeapon, &(scene->players)[scene->playerLap - 1].tailWeapon);
+Choosed_LollyBomb2 = true;
+SDL_SetRenderDrawColor(scene->renderer, 153, 153, 0, 0);
+SDL_RenderFillRect(scene->renderer, &LollyBomb2_rect);
+//SDL_RenderPresent(scene->renderer);
+}
+//If Cliked on Chinese Wall
+if ((scene->event.button.x >= ChineseWall_rect.x) && (scene->event.button.x <= ChineseWall_rect.x + ChineseWall_rect.w)
+&& (scene->event.button.y >= ChineseWall_rect.y) && (scene->event.button.y <= ChineseWall_rect.y + ChineseWall_rect.h) && Choosed_ChineseWall != true)
+{
+Weapon *weapon = NULL;
+weapon = (Weapon *)malloc(sizeof(Weapon));
+weapon->name = "Chinese Wall";
+weapon->score = 0;
+weapon->angle = 0;
+weapon->gravitatin = 0;
+weapon->texture = LoadTexture(scene->renderer, "Sprites/weapon1.bmp");
+PushWeapon(weapon, &scene->players[scene->playerLap - 1].headWeapon, &scene->players[scene->playerLap - 1].tailWeapon);
+//PushWeapon(weapon, &(scene->players)[scene->playerLap - 1].headWeapon, &(scene->players)[scene->playerLap - 1].tailWeapon);
+Choosed_ChineseWall = true;
+SDL_SetRenderDrawColor(scene->renderer, 153, 153, 0, 0);
+SDL_RenderFillRect(scene->renderer, &ChineseWall_rect);
+//SDL_RenderPresent(scene->renderer);
+}
+//If Cliked on Pineaple
+if ((scene->event.button.x >= Pineaple_rect.x) && (scene->event.button.x <= Pineaple_rect.x + Pineaple_rect.w)
+&& (scene->event.button.y >= Pineaple_rect.y) && (scene->event.button.y <= Pineaple_rect.y + Pineaple_rect.h) && Choosed_Pineaple != true)
+{
+Weapon *weapon = NULL;
+weapon = (Weapon *)malloc(sizeof(Weapon));
+weapon->name = "Pineaple";
+weapon->score = 4;
+weapon->angle = 0;
+weapon->gravitatin = 0;
+weapon->texture = LoadTexture(scene->renderer, "Sprites/weapon1.bmp");
+PushWeapon(weapon, &scene->players[scene->playerLap - 1].headWeapon, &scene->players[scene->playerLap - 1].tailWeapon);
+//PushWeapon(weapon, &(scene->players)[scene->playerLap - 1].headWeapon, &(scene->players)[scene->playerLap - 1].tailWeapon);
+Choosed_Pineaple = true;
+SDL_SetRenderDrawColor(scene->renderer, 153, 153, 0, 0);
+SDL_RenderFillRect(scene->renderer, &Pineaple_rect);
+//SDL_RenderPresent(scene->renderer);
+}
+
+}
+
+
+if ((strcmp(scene->players[0].name, "None") != 0) && (strcmp(scene->players[1].name, "None") != 0) && (scene->landscapeType ==1 || scene->landscapeType == 2 || scene->landscapeType == 3 ||
+scene->landscapeType == 4)  && Choosed_LollyBomb == true && Choosed_Laser == true && Choosed_Ravine == true && Choosed_LollyBomb2 == true && Choosed_ChineseWall == true && Choosed_Pineaple == true)
+{
+//Change the color of the button "Play" and check for the click on it.
+DrawMsgOnBottonScreen(scene, "Press Play...");
+SDL_Color colorButtonPlay2 = { 0, 102, 0 };
+SDL_SetRenderDrawColor(scene->renderer, 0, 102, 0, 0);
+SDL_RenderFillRect(scene->renderer, &ButtonPlay_rect);
+SDL_Texture * textureButtonPlay2 = CreateTextureFromText(scene->renderer, scene->font, "Play", colorBlack, colorButtonPlay2);
+SDL_RenderCopy(scene->renderer, textureButtonPlay2, NULL, &ButtonPlay_rect);
+SDL_RenderPresent(scene->renderer);
+SDL_DestroyTexture(textureButtonPlay);
+//SDL_RenderPresent(scene->renderer);
+
+scene->ClickOnPlay = false;
+while (scene->ClickOnPlay != true)
+{
+while (SDL_PollEvent(&scene->event))
+{
+if (scene->event.type == SDL_QUIT)ExitWhileInMenu(scene);
+if (scene->event.type == SDL_MOUSEBUTTONDOWN && scene->event.button.button == SDL_BUTTON_LEFT)
+{
+//Click on "Quit The Game"
+if ((scene->event.button.x >= ButtonQuitTheGame_rect.x) && (scene->event.button.x <= ButtonQuitTheGame_rect.x + ButtonQuitTheGame_rect.w)
+&& (scene->event.button.y >= ButtonQuitTheGame_rect.y) && (scene->event.button.y <= ButtonQuitTheGame_rect.y + ButtonQuitTheGame_rect.h))
+ExitWhileInMenu(scene);
+//Click On "Play"
+if ((scene->event.button.x >= ButtonPlay_rect.x) && (scene->event.button.x <= ButtonPlay_rect.x + ButtonPlay_rect.w)
+&& (scene->event.button.y >= ButtonPlay_rect.y) && (scene->event.button.y <= ButtonPlay_rect.y + ButtonPlay_rect.h))
+{
+scene->ClickOnPlay = true;
+scene->quitThirdScreen = true;
+scene->quitSecondScreen = true;
+break;
+}
+}
+}
+}
+break;
+
+}
+else {
+if (scene->playerLap == 1) scene->playerLap = 2;
+else scene->playerLap = 1;
+
+}
+}
+
+SDL_SetRenderTarget(scene->renderer, NULL);
+SDL_DestroyTexture(TextureMainMenuStart);
+};
+}
+*/
+
+void HideCursor()
+{
+	HANDLE hOut;
+	CONSOLE_CURSOR_INFO ConCurInf;
+	hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+	ConCurInf.dwSize = 10;
+	ConCurInf.bVisible = false;
+	SetConsoleCursorInfo(hOut, &ConCurInf);
+}
+
+void ShowCursor()
+{
+	HANDLE hOut;
+	CONSOLE_CURSOR_INFO ConCurInf;
+	hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+	ConCurInf.dwSize = 10;
+	ConCurInf.bVisible = true;
+	SetConsoleCursorInfo(hOut, &ConCurInf);
+}
+
+int ExitWhileInMenu(Scene *scene)
+{
+	SDL_DestroyRenderer(scene->renderer);
+	SDL_DestroyWindow(scene->window);
+	TTF_CloseFont(scene->font);
+	TTF_Quit();
+	SDL_Quit();
+	return 0;
+}
+
 void InitTopPanels(PlayerTopPanel topPanels[])
 {
 	// Panel of Player 1
