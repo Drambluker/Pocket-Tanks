@@ -844,7 +844,7 @@ void Draw_ALL_BestScoreLines(Scene *scene, RecordRow records[NUMBER_OF_RECORD_RO
 	SDL_Color colorScoresBg = { 128, 128, 0 };
 	for (int i = 0; i < NUMBER_OF_RECORD_ROWS; i++)
 	{
-		if (records[i].name != "Empty")
+		if (strcmp(records[i].name, "Empty") != 0)
 		{
 			SDL_Rect BestScoreRank_rect = { (int)((71.0 / 90)*SCREEN_WIDTH), (int)((14.0 / 55)*SCREEN_HEIGHT) - (int)(SCREEN_HEIGHT / 20.0) + i * ((int)((3.0 / 55)*SCREEN_HEIGHT)), (int)(SCREEN_WIDTH / 48.0), (int)((3.0 / 55)*SCREEN_HEIGHT) };
 			SDL_Texture * textureBestScoreRank = CreateTextureFromNumber(scene->renderer, scene->font, i + 1, colorBlack, colorScoresBg);
@@ -1966,7 +1966,7 @@ SDL_Texture * CreateTextureFromNumber(SDL_Renderer *renderer, TTF_Font *font, in
 void CreateAndDrawTopPanels(SDL_Renderer *renderer, TTF_Font *font, Player players[], PlayerTopPanel topPanels[])
 {
 	SDL_Color fg = { 0, 0, 0 };
-	SDL_Color bg = { 0, 102, 0 };
+	SDL_Color bg = { 0, 102, 0, 1 };
 	SDL_Color colorGold = { 255, 215, 0 };
 	for (int i = 0; i <= 1; i++)
 	{

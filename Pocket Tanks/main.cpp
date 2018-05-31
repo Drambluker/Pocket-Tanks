@@ -1,7 +1,7 @@
 #include "functions.h"
 #include "cmath"
 
-#define DEBUG 1
+#define DEBUG 0
 
 int main(int argc, char** argv)
 {
