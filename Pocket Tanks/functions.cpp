@@ -184,15 +184,15 @@ void UpdateLogic(Scene *scene)
 
 	if (scene->players[0].tank.body.rect.x + scene->players[0].tank.body.rect.w < SCREEN_WIDTH)
 	{
-		scene->players[0].tank.angle = 180 / Pi * atan((double)(scene->landscape.points[scene->players[0].tank.body.rect.x + scene->players[0].tank.body.rect.w].y -
-			scene->landscape.points[scene->players[0].tank.body.rect.x].y) / (scene->landscape.points[scene->players[0].tank.body.rect.x + scene->players[0].tank.body.rect.w].x -
+		scene->players[0].tank.angle = 180 / Pi * atan((double)(scene->landscape.points[int(scene->players[0].tank.body.rect.x + cos(scene->players[0].tank.angle * Pi / 180) * (scene->players[0].tank.body.rect.w - TANK_TURN_ERROR))].y -
+			scene->landscape.points[scene->players[0].tank.body.rect.x].y) / (scene->landscape.points[int(scene->players[0].tank.body.rect.x + cos(scene->players[0].tank.angle * Pi / 180) * (scene->players[0].tank.body.rect.w - TANK_TURN_ERROR))].x -
 			scene->landscape.points[scene->players[0].tank.body.rect.x].x));
 	}
 
 	if (scene->players[1].tank.body.rect.x + scene->players[1].tank.body.rect.w < SCREEN_WIDTH)
 	{
-		scene->players[1].tank.angle = 180 / Pi * atan((double)(scene->landscape.points[scene->players[1].tank.body.rect.x + scene->players[1].tank.body.rect.w].y -
-			scene->landscape.points[scene->players[1].tank.body.rect.x].y) / (scene->landscape.points[scene->players[1].tank.body.rect.x + scene->players[1].tank.body.rect.w].x -
+		scene->players[1].tank.angle = 180 / Pi * atan((double)(scene->landscape.points[int(scene->players[1].tank.body.rect.x + cos(scene->players[1].tank.angle * Pi / 180) * (scene->players[1].tank.body.rect.w - TANK_TURN_ERROR))].y -
+			scene->landscape.points[scene->players[1].tank.body.rect.x].y) / (scene->landscape.points[int(scene->players[1].tank.body.rect.x + cos(scene->players[1].tank.angle * Pi / 180) * (scene->players[1].tank.body.rect.w - TANK_TURN_ERROR))].x -
 			scene->landscape.points[scene->players[1].tank.body.rect.x].x));
 	}
 
