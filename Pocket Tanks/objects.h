@@ -38,6 +38,8 @@ struct Weapon
 	double gravitatin;
 	SDL_Rect rect;
 	SDL_Texture *texture;
+	SDL_Rect rectOfEffect;
+	SDL_Texture *effect;
 	Weapon *next;
 	Weapon *prev;
 };

@@ -216,41 +216,52 @@ void UpdateLogic(Scene *scene)
 			(scene->activeWeapon->rect.y <= 0 && strcmp(scene->activeWeapon->name, "Laser") == 0) ||
 			scene->activeWeapon->rect.y >= SCREEN_HEIGHT))
 		{
-			SDL_Point depth—oordinate = { scene->activeWeapon->rect.x, scene->activeWeapon->rect.y }; //
+			SDL_Point depth—oordinate = { scene->activeWeapon->rect.x, scene->activeWeapon->rect.y };
+			scene->activeWeapon->rectOfEffect = { int(depth—oordinate.x - scene->activeWeapon->rectOfEffect.w / 2), depth—oordinate.y - scene->activeWeapon->rectOfEffect.h / 2, int(scene->activeWeapon->rectOfEffect.w + 0.05 * scene->deltaTime), int(scene->activeWeapon->rectOfEffect.h + 0.05 * scene->deltaTime) };
 
-			if (strcmp(scene->activeWeapon->name, "Chinese Wall") == 0)
-				for (int i = depth—oordinate.x - 5; i < depth—oordinate.x + 5; i++)
-					scene->landscape.points[i].y -= 300;
-			else if (strcmp(scene->activeWeapon->name, "Ravine") == 0)
+			if (scene->activeWeapon->rectOfEffect.w > 2.25 * scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE)
 			{
-				for (int i = depth—oordinate.x - 50; i < depth—oordinate.x + 50; i++)
-					scene->landscape.points[i].y += 0.8 * SCREEN_HEIGHT - scene->landscape.points[i].y;
-			}
-			else if (strcmp(scene->activeWeapon->name, "Laser") != 0)
-			{
-				double t = 0;
-
-				for (int i = depth—oordinate.x - scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE; i <= depth—oordinate.x + scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE; i++)
+				if (strcmp(scene->activeWeapon->name, "Chinese Wall") == 0)
+					for (int i = depth—oordinate.x - 5; i < depth—oordinate.x + 5; i++)
+						scene->landscape.points[i].y -= 300;
+				else if (strcmp(scene->activeWeapon->name, "Ravine") == 0)
 				{
-					if (scene->landscape.points[depth—oordinate.x].y >= scene->defaultLandscape.points[depth—oordinate.x].y || scene->landscape.points[i].y <= depth—oordinate.y)
-						scene->landscape.points[i].y += scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE * sin(t);
-
-					t += Pi / (2 * scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE + 1);
+					for (int i = depth—oordinate.x - 50; i < depth—oordinate.x + 50; i++)
+						scene->landscape.points[i].y += 0.8 * SCREEN_HEIGHT - scene->landscape.points[i].y;
 				}
+				else if (strcmp(scene->activeWeapon->name, "Laser") != 0)
+				{
+					double t = 0;
+
+					for (int i = depth—oordinate.x - scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE; i <= depth—oordinate.x + scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE; i++)
+					{
+						if (scene->landscape.points[depth—oordinate.x].y >= scene->defaultLandscape.points[depth—oordinate.x].y || scene->landscape.points[i].y <= depth—oordinate.y)
+							scene->landscape.points[i].y += scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE * sin(t);
+
+						t += Pi / (2 * scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE + 1);
+					}
+				}
+
+				SDL_DestroyTexture(scene->activeWeapon->texture);
+				scene->activeWeapon->texture = NULL;
+				free(scene->activeWeapon);
+				scene->activeWeapon = NULL;
 			}
 		}
-
-		SDL_DestroyTexture(scene->activeWeapon->texture);
-		scene->activeWeapon->texture = NULL;
-		free(scene->activeWeapon);
-		scene->activeWeapon = NULL;
+		else
+		{
+			SDL_DestroyTexture(scene->activeWeapon->texture);
+			scene->activeWeapon->texture = NULL;
+			free(scene->activeWeapon);
+			scene->activeWeapon = NULL;
+		}
 	}
 }
 
 void DoRender(Scene *scene)
 {
-	RenderWeapon(scene->renderer, scene->activeWeapon);
 	DrawLandscape(scene->renderer, scene->landscape);
+	RenderWeapon(scene->renderer, scene->activeWeapon);
 	DrawTanks(scene->renderer, scene->players);
 
 	if (scene->activeWeapon != NULL && scene->activeWeapon->rect.y < scene->landscape.points[scene->activeWeapon->rect.x].y)
@@ -505,73 +516,13 @@ void InitPlayers(Player players[])
 		players[i].tank.cannon.texture = NULL;
 		players[i].tank.cannon.angle = 0;
 		players[i].tank.angle = 0;
-		/*players[i].headWeapon = NULL;
-		players[i].tailWeapon = NULL;
 
-		for (int j = 1; j <= NUMBER_OF_WEAPON; j++)
+		for (int j = 0; j < NUMBER_OF_WEAPON; j++)
 		{
-			weapon = (Weapon *)malloc(sizeof(Weapon));
-
-			switch (j)
-			{
-			case 1:
-				strcpy_s(weapon->name, NAME_LENGTH, "Lolly Bomb");
-				weapon->score = 1;
-				break;
-			case 2:
-				strcpy_s(weapon->name, NAME_LENGTH, "Lolly Bomb 2.0");
-				weapon->score = 2;
-				break;
-			case 3:
-				strcpy_s(weapon->name, NAME_LENGTH, "Chinese Wall");
-				weapon->score = 0;
-				break;
-			case 4:
-				strcpy_s(weapon->name, NAME_LENGTH, "Ravine");
-				weapon->score = 0;
-				break;
-			case 5:
-				strcpy_s(weapon->name, NAME_LENGTH, "Laser");
-				weapon->score = 5;
-				break;
-			default:
-				break;
-			}
-
-			weapon->angle = 0;
-			weapon->gravitatin = 0;
+			weapon = PopWeapon(&players[i].headWeapon);
+			weapon->rectOfEffect.w = weapon->rectOfEffect.h = 0;
 			PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
-		}*/
-
-		//weapon = (Weapon *)malloc(sizeof(Weapon));
-		//weapon->name = "Lolly Bomb";
-		//weapon->score = 1;
-		//weapon->angle = 0;
-		//weapon->gravitatin = 0;
-		//PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
-		//weapon = (Weapon *)malloc(sizeof(Weapon));
-		//weapon->name = "Lolly Bomb 2.0";
-		//weapon->score = 2;
-		//weapon->angle = 0;
-		//weapon->gravitatin = 0;
-		//PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
-		//weapon = (Weapon *)malloc(sizeof(Weapon));
-		//weapon->name = "Chinese Wall";
-		//weapon->score = 0;
-		//weapon->angle = 0;
-		//weapon->gravitatin = 0;
-		//PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
-		//weapon = (Weapon *)malloc(sizeof(Weapon));
-		//weapon->name = "Ravine";
-		//weapon->score = 0;
-		//weapon->angle = 0;
-		//weapon->gravitatin = 0;
-		//PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
-		//weapon->name = "Laser";
-		//weapon->score = 5;
-		//weapon->angle = 0;
-		//weapon->gravitatin = 0;
-		//PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
+		}
 	}
 
 	// Player 1
@@ -674,29 +625,10 @@ void LoadTextures(SDL_Renderer *renderer, Player players[])
 		for (int j = 0; j < NUMBER_OF_WEAPON; j++)
 		{
 			weapon = PopWeapon(&players[i].headWeapon);
-			weapon->texture = LoadTexture(renderer, "Sprites/weapon1.bmp");
+			//weapon->texture = LoadTexture(renderer, "Sprites/weapon1.bmp");
+			weapon->effect = LoadTexture(renderer, "Sprites/bang.bmp");
 			PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
 		}
-
-		//// Lolly Bomb
-		//weapon = PopWeapon(&players[i].headWeapon);
-		//weapon->texture = LoadTexture(renderer, "Sprites/weapon1.bmp");
-		//PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
-
-		//// Lolly Bomb 2.0
-		//weapon = PopWeapon(&players[i].headWeapon);
-		//weapon->texture = LoadTexture(renderer, "Sprites/weapon1.bmp");
-		//PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
-
-		//// Chinese Wall
-		//weapon = PopWeapon(&players[i].headWeapon);
-		//weapon->texture = LoadTexture(renderer, "Sprites/weapon1.bmp");
-		//PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
-
-		//// Ravine
-		//weapon = PopWeapon(&players[i].headWeapon);
-		//weapon->texture = LoadTexture(renderer, "Sprites/weapon1.bmp");
-		//PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
 	}
 }
 
@@ -720,6 +652,8 @@ void DestroyTextures(Player players[], Weapon *activeWeapon)
 		{
 			SDL_DestroyTexture(weapon->texture);
 			weapon->texture = NULL;
+			SDL_DestroyTexture(weapon->effect);
+			weapon->effect = NULL;
 			free(weapon);
 			weapon = NULL;
 			weapon = PopWeapon(&players[i].headWeapon);
@@ -757,6 +691,7 @@ void RenderWeapon(SDL_Renderer *renderer, Weapon *activeWeapon)
 			activeWeapon->rect.w = activeWeapon->rect.h = 7;
 
 		SDL_RenderCopy(renderer, activeWeapon->texture, NULL, &activeWeapon->rect);
+		SDL_RenderCopy(renderer, activeWeapon->effect, NULL, &activeWeapon->rectOfEffect);
 
 		//double deltaTime = GetCounter(timeStart, PCFreq) - *oldTime;
 		//*oldTime = newTime;
