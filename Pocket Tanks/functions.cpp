@@ -313,8 +313,8 @@ void DoRender(Scene *scene)
 	CreateAndDrawBottomPanels(scene->renderer, scene->font, scene->players);
 
 	//CreateAndDrawTopPanels(renderer, font, players, topPanels, mustRedraw); //
-	//CreateAndDrawBottomPanels(renderer, font, players, mustRedraw); //
-	//mustRedraw = false; //
+	//CreateAndDrawBottomPanels(renderer, font, players, mustRedraw);		 //
+	//mustRedraw = false;													//
 
 	SDL_RenderPresent(scene->renderer);
 }
@@ -705,15 +705,6 @@ void DestroyTextures(Player players[], Weapon *activeWeapon)
 		SDL_DestroyTexture(players[i].tank.body.texture);
 		players[i].tank.body.texture = NULL;
 	}
-
-	//SDL_DestroyTexture(players[1].tank.cannon.texture);
-	//players[1].tank.cannon.texture = NULL;
-	//SDL_DestroyTexture(players[1].tank.body.texture);
-	//players[1].tank.body.texture = NULL;
-	//SDL_DestroyTexture(players[0].tank.cannon.texture);
-	//players[0].tank.cannon.texture = NULL;
-	//SDL_DestroyTexture(players[0].tank.body.texture);
-	//players[0].tank.body.texture = NULL;
 }
 
 void RenderWeapon(SDL_Renderer *renderer, Weapon *activeWeapon)
@@ -732,20 +723,6 @@ void RenderWeapon(SDL_Renderer *renderer, Weapon *activeWeapon)
 			activeWeapon->rect.w = activeWeapon->rect.h = 7;
 
 		SDL_RenderCopy(renderer, activeWeapon->texture, NULL, &activeWeapon->rect);
-
-		//double deltaTime = GetCounter(timeStart, PCFreq) - *oldTime;
-		//*oldTime = newTime;
-		//activeWeapon->rect.x += 0.005 * activeWeapon->power * cos(activeWeapon->angle) * deltaTime;
-		//activeWeapon->rect.y += 0.005 * activeWeapon->power * sin(activeWeapon->angle) * deltaTime + activeWeapon->gravitatin * deltaTime;
-		//activeWeapon->gravitatin += 0.01;
-
-		//if (GetTickCount() - *time > 10)
-		//{
-		//	*time = GetTickCount();
-		//	activeWeapon->rect.x += 0.1 * activeWeapon->power * cos(activeWeapon->angle);
-		//	activeWeapon->rect.y += 0.1 * activeWeapon->power * sin(activeWeapon->angle) + activeWeapon->gravitatin;
-		//	activeWeapon->gravitatin += 0.05;
-		//}
 	}
 }
 
