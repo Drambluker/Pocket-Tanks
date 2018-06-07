@@ -144,7 +144,7 @@ bool ProcessEvents(Scene *scene)
 		{
 			newAngle = 180 / Pi * atan((double)(scene->landscape.points[scene->players[scene->playerLap - 1].tank.body.rect.x - int(0.03 * scene->deltaTime) - 1 + scene->players[scene->playerLap - 1].tank.body.rect.w].y -
 				scene->landscape.points[scene->players[scene->playerLap - 1].tank.body.rect.x - int(0.03 * scene->deltaTime) - 1].y) / (scene->landscape.points[scene->players[scene->playerLap - 1].tank.body.rect.x - int(0.03 * scene->deltaTime) - 1 + scene->players[scene->playerLap - 1].tank.body.rect.w].x -
-				scene->landscape.points[scene->players[scene->playerLap - 1].tank.body.rect.x - int(0.03 * scene->deltaTime) - 1].x));
+					scene->landscape.points[scene->players[scene->playerLap - 1].tank.body.rect.x - int(0.03 * scene->deltaTime) - 1].x));
 
 			if (newAngle < CRITICAL_ANGLE && newAngle > -45)
 				scene->players[scene->playerLap - 1].tank.body.rect.x -= 0.03 * scene->deltaTime;
@@ -154,7 +154,7 @@ bool ProcessEvents(Scene *scene)
 		{
 			newAngle = 180 / Pi * atan((double)(scene->landscape.points[scene->players[scene->playerLap - 1].tank.body.rect.x + int(0.03 * scene->deltaTime) + 1 + scene->players[scene->playerLap - 1].tank.body.rect.w].y -
 				scene->landscape.points[scene->players[scene->playerLap - 1].tank.body.rect.x + int(0.03 * scene->deltaTime) + 1].y) / (scene->landscape.points[scene->players[scene->playerLap - 1].tank.body.rect.x + int(0.03 * scene->deltaTime) + 1 + scene->players[scene->playerLap - 1].tank.body.rect.w].x -
-				scene->landscape.points[scene->players[scene->playerLap - 1].tank.body.rect.x + int(0.03 * scene->deltaTime) + 1].x));
+					scene->landscape.points[scene->players[scene->playerLap - 1].tank.body.rect.x + int(0.03 * scene->deltaTime) + 1].x));
 
 			if (newAngle > -CRITICAL_ANGLE && newAngle < 45)
 				scene->players[scene->playerLap - 1].tank.body.rect.x += 0.06 * scene->deltaTime;
@@ -186,22 +186,22 @@ void UpdateLogic(Scene *scene)
 	{
 		scene->players[0].tank.angle = 180 / Pi * atan((double)(scene->landscape.points[int(scene->players[0].tank.body.rect.x + cos(scene->players[0].tank.angle * Pi / 180) * (scene->players[0].tank.body.rect.w - TANK_TURN_ERROR))].y -
 			scene->landscape.points[scene->players[0].tank.body.rect.x].y) / (scene->landscape.points[int(scene->players[0].tank.body.rect.x + cos(scene->players[0].tank.angle * Pi / 180) * (scene->players[0].tank.body.rect.w - TANK_TURN_ERROR))].x -
-			scene->landscape.points[scene->players[0].tank.body.rect.x].x));
+				scene->landscape.points[scene->players[0].tank.body.rect.x].x));
 	}
 
 	if (scene->players[1].tank.body.rect.x + scene->players[1].tank.body.rect.w < SCREEN_WIDTH)
 	{
 		scene->players[1].tank.angle = 180 / Pi * atan((double)(scene->landscape.points[int(scene->players[1].tank.body.rect.x + cos(scene->players[1].tank.angle * Pi / 180) * (scene->players[1].tank.body.rect.w - TANK_TURN_ERROR))].y -
 			scene->landscape.points[scene->players[1].tank.body.rect.x].y) / (scene->landscape.points[int(scene->players[1].tank.body.rect.x + cos(scene->players[1].tank.angle * Pi / 180) * (scene->players[1].tank.body.rect.w - TANK_TURN_ERROR))].x -
-			scene->landscape.points[scene->players[1].tank.body.rect.x].x));
+				scene->landscape.points[scene->players[1].tank.body.rect.x].x));
 	}
 
 	Gravitate(scene->players, scene->landscape);
 
-	if (scene->activeWeapon != NULL && DirectHitInTheTank(scene->activeWeapon, scene->players[(scene->playerLap == 2) ? 1 : 0]))
-	{
+	if (scene->activeWeapon != NULL && (scene->activeWeapon->rectOfEffect.w + 0.05 * scene->deltaTime > 2.25 * scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE && HitInTheTank(scene->activeWeapon, scene->players[(scene->playerLap == 2) ? 1 : 0]) || strcmp(scene->activeWeapon->name, "Laser") == 0 && DirectHitInTheTank(scene->activeWeapon, scene->players[(scene->playerLap == 2) ? 1 : 0])))
 		scene->players[(scene->playerLap == 2) ? 0 : 1].score += scene->activeWeapon->score;
-	}
+	else if (scene->activeWeapon != NULL && (scene->activeWeapon->rectOfEffect.w + 0.05 * scene->deltaTime > 2.25 * scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE && HitInTheTank(scene->activeWeapon, scene->players[(scene->playerLap == 2) ? 0 : 1]) || strcmp(scene->activeWeapon->name, "Laser") == 0 && DirectHitInTheTank(scene->activeWeapon, scene->players[(scene->playerLap == 2) ? 0 : 1])))
+		scene->players[(scene->playerLap == 2) ? 0 : 1].score -= scene->activeWeapon->score;
 
 	if (scene->activeWeapon != NULL && (scene->activeWeapon->rect.y >= scene->landscape.points[scene->activeWeapon->rect.x].y ||
 		DirectHitInTheTank(scene->activeWeapon, scene->players[(scene->playerLap == 2) ? 1 : 0]) ||
@@ -223,13 +223,23 @@ void UpdateLogic(Scene *scene)
 			{
 				if (strcmp(scene->activeWeapon->name, "Chinese Wall") == 0)
 				{
-					for (int i = depth—oordinate.x - 5; i < depth—oordinate.x + 5; i++)
-						if (i >= 0 && i <= SCREEN_WIDTH) scene->landscape.points[i].y -= 300;
+					if (!(depth—oordinate.x - 5 >= scene->players[0].tank.body.rect.x && depth—oordinate.x - 5 <= scene->players[0].tank.body.rect.x + scene->players[0].tank.body.rect.w ||
+						depth—oordinate.x + 5 >= scene->players[0].tank.body.rect.x && depth—oordinate.x + 5 <= scene->players[0].tank.body.rect.x + scene->players[0].tank.body.rect.w ||
+						depth—oordinate.x - 5 >= scene->players[1].tank.body.rect.x && depth—oordinate.x - 5 <= scene->players[1].tank.body.rect.x + scene->players[1].tank.body.rect.w ||
+						depth—oordinate.x + 5 >= scene->players[1].tank.body.rect.x && depth—oordinate.x + 5 <= scene->players[1].tank.body.rect.x + scene->players[1].tank.body.rect.w))
+					{
+						for (int i = depth—oordinate.x - 5; i < depth—oordinate.x + 5; i++)
+							if (i >= 0 && i <= SCREEN_WIDTH) scene->landscape.points[i].y -= 300;
+					}
 				}
 				else if (strcmp(scene->activeWeapon->name, "Ravine") == 0)
 				{
 					for (int i = depth—oordinate.x - 50; i < depth—oordinate.x + 50; i++)
-						if (i >= 0 && i <= SCREEN_WIDTH) scene->landscape.points[i].y += 0.8 * SCREEN_HEIGHT - scene->landscape.points[i].y;
+						if (i >= 0 && i <= SCREEN_WIDTH &&
+							!(i >= scene->players[0].tank.body.rect.x &&
+								i <= scene->players[0].tank.body.rect.x + scene->players[0].tank.body.rect.w ||
+								i >= scene->players[1].tank.body.rect.x &&
+								i <= scene->players[1].tank.body.rect.x + scene->players[0].tank.body.rect.w)) scene->landscape.points[i].y += 0.8 * SCREEN_HEIGHT - scene->landscape.points[i].y;
 				}
 				else if (strcmp(scene->activeWeapon->name, "Laser") != 0)
 				{
@@ -490,6 +500,17 @@ bool DirectHitInTheTank(Weapon *activeWeapon, Player player)
 	if (activeWeapon->rect.x > player.tank.body.rect.x && activeWeapon->rect.x < player.tank.body.rect.x + player.tank.body.rect.w &&
 		activeWeapon->rect.y > player.tank.body.rect.y && activeWeapon->rect.y < player.tank.body.rect.y + player.tank.body.rect.h)
 		return true;
+
+	return false;
+}
+
+bool HitInTheTank(Weapon *activeWeapon, Player player)
+{
+	if (player.tank.body.rect.y + player.tank.body.rect.h / 2 >= activeWeapon->rectOfEffect.y &&  player.tank.body.rect.y + player.tank.body.rect.h / 2 <= activeWeapon->rectOfEffect.y + activeWeapon->rectOfEffect.h &&
+		player.tank.body.rect.x + player.tank.body.rect.w / 2 >= activeWeapon->rectOfEffect.x && player.tank.body.rect.x + player.tank.body.rect.w / 2 <= activeWeapon->rectOfEffect.x + activeWeapon->rectOfEffect.w)
+	{
+		return true;
+	}
 
 	return false;
 }

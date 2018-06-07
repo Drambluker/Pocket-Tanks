@@ -13,23 +13,24 @@ LONGLONG StartCounter(double *);
 double GetCounter(ULONGLONG, double);
 double FRand(double, double);
 double InterpolateLagrangePolynomial(double, double[], double[], int);
-void LoadScene(Scene *); //
-bool ProcessEvents(Scene *); //
-void UpdateLogic(Scene *); //
+void LoadScene(Scene *);
+bool ProcessEvents(Scene *);
+void UpdateLogic(Scene *);
 bool DirectHitInTheTank(Weapon *, Player);
-void DoRender(Scene *); //
+bool HitInTheTank(Weapon *, Player);
+void DoRender(Scene *);
 void DestroyScene(Scene *);
-void LoadRecords(RecordRow[NUMBER_OF_RECORD_ROWS]); //
-void UpdateRecords(Player[]); //
+void LoadRecords(RecordRow[NUMBER_OF_RECORD_ROWS]);
+void UpdateRecords(Player[]);
 void InitLandscape(Landscape *, Landscape *, int);
 void Gravitate(Player[], Landscape);
-void DrawLandscape(SDL_Renderer *, Landscape); //
-void InitPlayers(Player[]); //
-void DrawTanks(SDL_Renderer *, Player[]); //
-void RenderWeapon(SDL_Renderer *renderer, Weapon *); //
+void DrawLandscape(SDL_Renderer *, Landscape);
+void InitPlayers(Player[]);
+void DrawTanks(SDL_Renderer *, Player[]);
+void RenderWeapon(SDL_Renderer *renderer, Weapon *);
 
 SDL_Texture * LoadTexture(SDL_Renderer *renderer, const char *file);
-void LoadTextures(SDL_Renderer *renderer, Player[]); //
+void LoadTextures(SDL_Renderer *renderer, Player[]);
 void DestroyTextures(Player[], Weapon *);
 
 void PushWeapon(Weapon *, Weapon **, Weapon **);
