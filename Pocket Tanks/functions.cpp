@@ -262,9 +262,10 @@ void UpdateLogic(Scene *scene)
 
 void DoRender(Scene *scene)
 {
-	DrawLandscape(scene->renderer, scene->landscape);
 	RenderWeapon(scene->renderer, scene->activeWeapon);
+	DrawLandscape(scene->renderer, scene->landscape);
 	DrawTanks(scene->renderer, scene->players);
+	if (scene->activeWeapon != NULL) SDL_RenderCopy(scene->renderer, scene->activeWeapon->effect, NULL, &scene->activeWeapon->rectOfEffect); // Render effect
 
 	if (scene->activeWeapon != NULL && scene->activeWeapon->rect.y < scene->landscape.points[scene->activeWeapon->rect.x].y)
 	{
@@ -693,7 +694,6 @@ void RenderWeapon(SDL_Renderer *renderer, Weapon *activeWeapon)
 			activeWeapon->rect.w = activeWeapon->rect.h = 7;
 
 		SDL_RenderCopy(renderer, activeWeapon->texture, NULL, &activeWeapon->rect);
-		SDL_RenderCopy(renderer, activeWeapon->effect, NULL, &activeWeapon->rectOfEffect);
 
 		//double deltaTime = GetCounter(timeStart, PCFreq) - *oldTime;
 		//*oldTime = newTime;
