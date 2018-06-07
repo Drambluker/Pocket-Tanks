@@ -198,19 +198,19 @@ void UpdateLogic(Scene *scene)
 
 	Gravitate(scene->players, scene->landscape);
 
-	if (scene->activeWeapon != NULL && GotInTheTank(scene->activeWeapon, scene->players[(scene->playerLap == 2) ? 1 : 0]))
+	if (scene->activeWeapon != NULL && DirectHitInTheTank(scene->activeWeapon, scene->players[(scene->playerLap == 2) ? 1 : 0]))
 	{
 		scene->players[(scene->playerLap == 2) ? 0 : 1].score += scene->activeWeapon->score;
 	}
 
 	if (scene->activeWeapon != NULL && (scene->activeWeapon->rect.y >= scene->landscape.points[scene->activeWeapon->rect.x].y ||
-		GotInTheTank(scene->activeWeapon, scene->players[(scene->playerLap == 2) ? 1 : 0]) ||
+		DirectHitInTheTank(scene->activeWeapon, scene->players[(scene->playerLap == 2) ? 1 : 0]) ||
 		scene->activeWeapon->rect.x <= 0 ||
 		scene->activeWeapon->rect.x >= SCREEN_WIDTH ||
 		(scene->activeWeapon->rect.y <= 0 && strcmp(scene->activeWeapon->name, "Laser") == 0) ||
 		scene->activeWeapon->rect.y >= SCREEN_HEIGHT)) //
 	{
-		if (!(GotInTheTank(scene->activeWeapon, scene->players[(scene->playerLap == 2) ? 1 : 0]) ||
+		if (!(DirectHitInTheTank(scene->activeWeapon, scene->players[(scene->playerLap == 2) ? 1 : 0]) ||
 			scene->activeWeapon->rect.x <= 0 ||
 			scene->activeWeapon->rect.x >= SCREEN_WIDTH ||
 			(scene->activeWeapon->rect.y <= 0 && strcmp(scene->activeWeapon->name, "Laser") == 0) ||
@@ -485,7 +485,7 @@ void Gravitate(Player players[], Landscape landscape)
 	}
 }
 
-bool GotInTheTank(Weapon *activeWeapon, Player player)
+bool DirectHitInTheTank(Weapon *activeWeapon, Player player)
 {
 	if (activeWeapon->rect.x > player.tank.body.rect.x && activeWeapon->rect.x < player.tank.body.rect.x + player.tank.body.rect.w &&
 		activeWeapon->rect.y > player.tank.body.rect.y && activeWeapon->rect.y < player.tank.body.rect.y + player.tank.body.rect.h)

@@ -49,7 +49,7 @@ void DrawBottomPanel(SDL_Renderer *, SDL_Texture *, SDL_Texture *, SDL_Texture *
 SDL_Texture * CreateTextureFromNumber(SDL_Renderer *, TTF_Font *, int, SDL_Color, SDL_Color);
 SDL_Texture * CreateTextureFromText(SDL_Renderer *, TTF_Font *, const char *, SDL_Color, SDL_Color);
 void BottomPanelInterations(Player[], int, int, int, Weapon *);
-bool GotInTheTank(Weapon *, Player);
+bool DirectHitInTheTank(Weapon *, Player);
 
 void DrawMsgOnBottonScreen(Scene *, const char *);
 void Draw_ALL_BestScoreLines(Scene *, RecordRow[NUMBER_OF_RECORD_ROWS], SDL_Texture *);
