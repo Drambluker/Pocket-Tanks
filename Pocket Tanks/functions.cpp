@@ -198,9 +198,9 @@ void UpdateLogic(Scene *scene)
 
 	Gravitate(scene->players, scene->landscape);
 
-	if (scene->activeWeapon != NULL && (scene->activeWeapon->rectOfEffect.w + 0.05 * scene->deltaTime > 2.25 * scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE && HitInTheTank(scene->activeWeapon, scene->players[(scene->playerLap == 2) ? 1 : 0]) || strcmp(scene->activeWeapon->name, "Laser") == 0 && DirectHitInTheTank(scene->activeWeapon, scene->players[(scene->playerLap == 2) ? 1 : 0])))
+	if (scene->activeWeapon != NULL && (scene->activeWeapon->rectOfEffect.w + 0.05 * scene->deltaTime > 2.25 * scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE && HitInTheTank(scene->activeWeapon, scene->players[(scene->playerLap == 2) ? 1 : 0]) || DirectHitInTheTank(scene->activeWeapon, scene->players[(scene->playerLap == 2) ? 1 : 0])))
 		scene->players[(scene->playerLap == 2) ? 0 : 1].score += scene->activeWeapon->score;
-	else if (scene->activeWeapon != NULL && (scene->activeWeapon->rectOfEffect.w + 0.05 * scene->deltaTime > 2.25 * scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE && HitInTheTank(scene->activeWeapon, scene->players[(scene->playerLap == 2) ? 0 : 1]) || strcmp(scene->activeWeapon->name, "Laser") == 0 && DirectHitInTheTank(scene->activeWeapon, scene->players[(scene->playerLap == 2) ? 0 : 1])))
+	else if (scene->activeWeapon != NULL && scene->activeWeapon->rectOfEffect.w + 0.05 * scene->deltaTime > 2.25 * scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE && HitInTheTank(scene->activeWeapon, scene->players[(scene->playerLap == 2) ? 0 : 1]))
 		scene->players[(scene->playerLap == 2) ? 0 : 1].score -= scene->activeWeapon->score;
 
 	if (scene->activeWeapon != NULL && (scene->activeWeapon->rect.y >= scene->landscape.points[scene->activeWeapon->rect.x].y ||
@@ -284,6 +284,23 @@ void DoRender(Scene *scene)
 		if (strcmp(scene->activeWeapon->name, "Laser") == 0)
 		{
 			scene->activeWeapon->rect.y += 0.005 * scene->players[(scene->playerLap == 2) ? 0 : 1].power * sin(scene->activeWeapon->angle) * scene->deltaTime;
+		}
+		else if (strcmp(scene->activeWeapon->name, "Pineaple") == 0)
+		{
+			if (scene->activeWeapon->rect.y >= scene->activeWeapon->rect.y + 0.005 * scene->players[(scene->playerLap == 2) ? 0 : 1].power * sin(scene->activeWeapon->angle) * scene->deltaTime + scene->activeWeapon->gravitatin * scene->deltaTime)
+			{
+				scene->activeWeapon->rect.y += 0.005 * scene->players[(scene->playerLap == 2) ? 0 : 1].power * sin(scene->activeWeapon->angle) * scene->deltaTime + scene->activeWeapon->gravitatin * scene->deltaTime;
+				scene->activeWeapon->gravitatin += 0.0015;
+			}
+			else
+			{
+				if (scene->playerLap == 2)
+					scene->activeWeapon->angle = atan(fabs(scene->players[(scene->playerLap == 2) ? 1 : 0].tank.body.rect.y + scene->players[(scene->playerLap == 2) ? 1 : 0].tank.body.rect.h / 2 - scene->activeWeapon->rect.y) / fabs(scene->players[(scene->playerLap == 2) ? 1 : 0].tank.body.rect.x + scene->players[(scene->playerLap == 2) ? 1 : 0].tank.body.rect.w / 2 - scene->activeWeapon->rect.x));
+				else
+					scene->activeWeapon->angle = Pi - atan(fabs(scene->players[(scene->playerLap == 2) ? 1 : 0].tank.body.rect.y + scene->players[(scene->playerLap == 2) ? 1 : 0].tank.body.rect.h / 2 - scene->activeWeapon->rect.y) / fabs(scene->players[(scene->playerLap == 2) ? 1 : 0].tank.body.rect.x + scene->players[(scene->playerLap == 2) ? 1 : 0].tank.body.rect.w / 2 - scene->activeWeapon->rect.x));
+
+				scene->activeWeapon->rect.y += 0.005 * scene->players[(scene->playerLap == 2) ? 0 : 1].power * sin(scene->activeWeapon->angle) * scene->deltaTime;
+			}
 		}
 		else
 		{
