@@ -198,9 +198,9 @@ void UpdateLogic(Scene *scene)
 
 	Gravitate(scene->players, scene->landscape);
 
-	if (scene->activeWeapon != NULL && (scene->activeWeapon->rectOfEffect.w + 0.05 * scene->deltaTime > 2.25 * scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE && HitInTheTank(scene->activeWeapon, scene->players[(scene->playerLap == 2) ? 1 : 0]) || DirectHitInTheTank(scene->activeWeapon, scene->players[(scene->playerLap == 2) ? 1 : 0])))
+	if (scene->activeWeapon != NULL && (int(scene->activeWeapon->rectOfEffect.w + 0.05 * scene->deltaTime) > 2.25 * scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE && HitInTheTank(scene->activeWeapon, scene->players[(scene->playerLap == 2) ? 1 : 0]) || DirectHitInTheTank(scene->activeWeapon, scene->players[(scene->playerLap == 2) ? 1 : 0])))
 		scene->players[(scene->playerLap == 2) ? 0 : 1].score += scene->activeWeapon->score;
-	else if (scene->activeWeapon != NULL && scene->activeWeapon->rectOfEffect.w + 0.05 * scene->deltaTime > 2.25 * scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE && HitInTheTank(scene->activeWeapon, scene->players[(scene->playerLap == 2) ? 0 : 1]))
+	else if (scene->activeWeapon != NULL && int(scene->activeWeapon->rectOfEffect.w + 0.05 * scene->deltaTime) > 2.25 * scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE && HitInTheTank(scene->activeWeapon, scene->players[(scene->playerLap == 2) ? 0 : 1]))
 		scene->players[(scene->playerLap == 2) ? 0 : 1].score -= scene->activeWeapon->score;
 
 	if (scene->activeWeapon != NULL && (scene->activeWeapon->rect.y >= scene->landscape.points[scene->activeWeapon->rect.x].y ||
