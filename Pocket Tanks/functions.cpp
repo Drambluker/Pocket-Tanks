@@ -219,15 +219,17 @@ void UpdateLogic(Scene *scene)
 			SDL_Point depth—oordinate = { scene->activeWeapon->rect.x, scene->activeWeapon->rect.y };
 			scene->activeWeapon->rectOfEffect = { int(depth—oordinate.x - scene->activeWeapon->rectOfEffect.w / 2), depth—oordinate.y - scene->activeWeapon->rectOfEffect.h / 2, int(scene->activeWeapon->rectOfEffect.w + 0.05 * scene->deltaTime), int(scene->activeWeapon->rectOfEffect.h + 0.05 * scene->deltaTime) };
 
-			if (scene->activeWeapon->rectOfEffect.w > 2.25 * scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE)
+			if (scene->activeWeapon->rectOfEffect.w > 2.25 * scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE || strcmp(scene->activeWeapon->name, "Laser") == 0)
 			{
 				if (strcmp(scene->activeWeapon->name, "Chinese Wall") == 0)
+				{
 					for (int i = depth—oordinate.x - 5; i < depth—oordinate.x + 5; i++)
-						scene->landscape.points[i].y -= 300;
+						if (i >= 0 && i <= SCREEN_WIDTH) scene->landscape.points[i].y -= 300;
+				}
 				else if (strcmp(scene->activeWeapon->name, "Ravine") == 0)
 				{
 					for (int i = depth—oordinate.x - 50; i < depth—oordinate.x + 50; i++)
-						scene->landscape.points[i].y += 0.8 * SCREEN_HEIGHT - scene->landscape.points[i].y;
+						if (i >= 0 && i <= SCREEN_WIDTH) scene->landscape.points[i].y += 0.8 * SCREEN_HEIGHT - scene->landscape.points[i].y;
 				}
 				else if (strcmp(scene->activeWeapon->name, "Laser") != 0)
 				{
@@ -235,7 +237,7 @@ void UpdateLogic(Scene *scene)
 
 					for (int i = depth—oordinate.x - scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE; i <= depth—oordinate.x + scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE; i++)
 					{
-						if (scene->landscape.points[depth—oordinate.x].y >= scene->defaultLandscape.points[depth—oordinate.x].y || scene->landscape.points[i].y <= depth—oordinate.y)
+						if (i >= 0 && i <= SCREEN_WIDTH && (scene->landscape.points[depth—oordinate.x].y >= scene->defaultLandscape.points[depth—oordinate.x].y || scene->landscape.points[i].y <= depth—oordinate.y))
 							scene->landscape.points[i].y += scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE * sin(t);
 
 						t += Pi / (2 * scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE + 1);
