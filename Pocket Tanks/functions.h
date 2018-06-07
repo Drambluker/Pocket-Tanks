@@ -7,6 +7,7 @@
 #include <Windows.h>
 #include "SDL_image.h"
 #include "SDL_TTF.h"
+#include "SDL_mixer.h"
 #include "objects.h"
 
 // Eric

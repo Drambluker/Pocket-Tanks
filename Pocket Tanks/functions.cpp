@@ -92,6 +92,15 @@ void LoadScene(Scene *scene)
 		exit(1);
 	}
 
+	if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
+	{
+		printf_s("Mix_Error: %s\n", Mix_GetError());
+		system("pause");
+		exit(1);
+	}
+
+	scene->soundEffect = Mix_LoadWAV("Samples/MGK_Oh_Shit.wav");
+
 	if (scene->GameOpening == true)
 	{
 		CreateAndDrawStartMenu(scene);
@@ -163,6 +172,11 @@ bool ProcessEvents(Scene *scene)
 		if (scene->event.type == SDL_KEYDOWN && scene->event.key.keysym.sym == SDLK_SPACE && scene->activeWeapon == NULL)
 		{
 			scene->activeWeapon = PopWeapon(&scene->players[scene->playerLap - 1].headWeapon);
+
+			if (strcmp(scene->activeWeapon->name, "Pineaple") == 0)
+			{
+				Mix_PlayChannel(-1, scene->soundEffect, 0);
+			}
 
 			if (scene->activeWeapon == NULL && scene->playerLap == 2)
 			{
@@ -338,6 +352,10 @@ void DestroyScene(Scene *scene)
 	}
 
 	DestroyTextures(scene->players, scene->activeWeapon);
+
+	Mix_FreeChunk(scene->soundEffect);
+	scene->soundEffect = NULL;
+	Mix_Quit();
 
 	SDL_DestroyRenderer(scene->renderer);
 	SDL_DestroyWindow(scene->window);
