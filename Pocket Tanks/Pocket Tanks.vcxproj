@@ -149,10 +149,12 @@
     <ClInclude Include="constants.h" />
     <ClInclude Include="functions.h" />
     <ClInclude Include="objects.h" />
+    <ClInclude Include="temp.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="functions.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="temp.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Sprites\body1.bmp" />

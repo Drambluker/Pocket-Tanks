@@ -1,8 +1,8 @@
 #pragma once
 
 #include <stdio.h>
-#include <string.h>
-#include <math.h>
+#include <sstream>
+#include "cmath"
 #include <time.h>
 #include <Windows.h>
 #include "SDL_image.h"
@@ -23,7 +23,6 @@ bool HitInTheTank(Weapon *, Player);
 void DoRender(Scene *);
 void DestroyScene(Scene *);
 void LoadRecords(RecordRow[NUMBER_OF_RECORD_ROWS]);
-void UpdateRecords(Player[]);
 void InitLandscape(Landscape *, Landscape *, int);
 void Gravitate(Player[], Landscape);
 void DrawLandscape(SDL_Renderer *, Landscape);
@@ -41,23 +40,26 @@ void SetHeadOnNext(Weapon **);
 void SetHeadOnPrev(Weapon **);
 
 // Hank
+void Draw_A_text(Scene *, SDL_Rect, const char *, SDL_Color, SDL_Color, char *, int);
 void ShowCursor();
 void HideCursor();
-void DrawWeaponInsidePanel(Scene *, const char *);
+void DrawWeaponInsidePanel(Scene *, const char *, int);
 void InitTopPanels(PlayerTopPanel[]);
 void DrawTopPanels(SDL_Renderer *, PlayerTopPanel[], SDL_Texture *, SDL_Texture *, SDL_Texture *, int);
 void CreateAndDrawTopPanels(SDL_Renderer *, TTF_Font *, Player[], PlayerTopPanel[]);
 
-void CreateAndDrawBottomPanels(SDL_Renderer *, TTF_Font *, Player[]);
-void DrawBottomPanel(SDL_Renderer *, SDL_Texture *, SDL_Texture *, SDL_Texture *, SDL_Texture *, SDL_Texture *, SDL_Texture *, SDL_Texture *, SDL_Texture *, int);
+void CreateAndDrawBottomPanels(Scene *, TTF_Font *, Player[]);
+//void DrawBottomPanel(SDL_Renderer *, SDL_Texture *, SDL_Texture *, SDL_Texture *, SDL_Texture *, SDL_Texture *, SDL_Texture *, SDL_Texture *, SDL_Texture *, int);
 SDL_Texture * CreateTextureFromNumber(SDL_Renderer *, TTF_Font *, int, SDL_Color, SDL_Color);
 SDL_Texture * CreateTextureFromText(SDL_Renderer *, TTF_Font *, const char *, SDL_Color, SDL_Color);
 void BottomPanelInterations(Player[], int, int, int, Weapon *);
 
-void DrawMsgOnBottonScreen(Scene *, const char *);
+//void DrawMsgOnBottonScreen(Scene *, const char *);
 void Draw_ALL_BestScoreLines(Scene *, RecordRow[NUMBER_OF_RECORD_ROWS], SDL_Texture *);
 void DrawBestScoresPanel(Scene *);
 bool CreateAndDrawStartMenu(Scene *);
 int ExitWhileInMenu(Scene *);
 void SecondMenuScreenInterations(Scene *, SDL_Rect, SDL_Rect, SDL_Rect);
 void CreateAndDraw2PlayersMenu(Scene *);
+void ObtainNameOfWinner(Scene *, int);
+void UpdateAndSaveRecord(Scene *, Player[], int);

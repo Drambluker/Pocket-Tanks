@@ -84,7 +84,7 @@ void LoadScene(Scene *scene)
 		exit(1);
 	}
 
-	scene->font = TTF_OpenFont("arial.ttf", 100);
+	scene->font = TTF_OpenFont("black_ops_one_regular.ttf", 100);
 	if (!scene->font)
 	{
 		printf_s("TTF_Error: %s\n", TTF_GetError());
@@ -323,7 +323,7 @@ void DoRender(Scene *scene)
 	}
 
 	CreateAndDrawTopPanels(scene->renderer, scene->font, scene->players, scene->topPanels);
-	CreateAndDrawBottomPanels(scene->renderer, scene->font, scene->players);
+	CreateAndDrawBottomPanels(scene, scene->font, scene->players);
 
 	//CreateAndDrawTopPanels(renderer, font, players, topPanels, mustRedraw); //
 	//CreateAndDrawBottomPanels(renderer, font, players, mustRedraw);		 //
@@ -334,7 +334,18 @@ void DoRender(Scene *scene)
 
 void DestroyScene(Scene *scene)
 {
-	UpdateRecords(scene->players);
+	int i = -1;
+
+	if ((scene->players[0].score > scene->players[1].score) && (scene->players[0].score > 0))
+		i = 0;
+	else if ((scene->players[1].score > scene->players[0].score) && (scene->players[1].score > 0))
+		i = 1;
+
+	if (i == 0 || i == 1)
+	{
+		ObtainNameOfWinner(scene, i);
+		if (strlen(scene->WinnerName) > 0) UpdateAndSaveRecord(scene, scene->players, i);
+	}
 
 	Weapon *tempWeapon = NULL;
 
@@ -394,74 +405,6 @@ void LoadRecords(RecordRow records[NUMBER_OF_RECORD_ROWS])
 	}
 
 	fread(records, sizeof(RecordRow), NUMBER_OF_RECORD_ROWS, recordsFile);
-	fclose(recordsFile);
-	recordsFile = NULL;
-}
-
-void UpdateRecords(Player players[])
-{
-	RecordRow records[NUMBER_OF_RECORD_ROWS];
-	LoadRecords(records);
-	int recordsIndex;
-
-	for (int i = 0; i < 2; i++)
-	{
-		recordsIndex = -1;
-
-		for (int j = 0; j < NUMBER_OF_RECORD_ROWS; j++)
-			if (players[i].score >= records[j].score)
-			{
-				recordsIndex = j;
-				break;
-			}
-
-		if (recordsIndex > -1)
-		{
-			for (int j = NUMBER_OF_RECORD_ROWS - 2; j >= recordsIndex; j--)
-				records[j + 1] = records[j];
-
-			strcpy_s(records[recordsIndex].name, NAME_LENGTH, players[i].name);
-			records[recordsIndex].score = players[i].score;
-		}
-	}
-
-	//for (int i = 0; i < NUMBER_OF_RECORD_ROWS; i++)
-	//	if (players[0].score >= records[i].score)
-	//	{
-	//		recordsIndex = i;
-	//		break;
-	//	}
-
-	//if (recordsIndex > -1)
-	//{
-	//	for (int i = recordsIndex; i < NUMBER_OF_RECORD_ROWS - 1; i++)
-	//		records[i + 1] = records[i];
-
-	//	records[recordsIndex].name = players[0].name;
-	//	records[recordsIndex].score = players[0].score;
-	//}
-
-	//recordsIndex = -1;
-
-	//for (int i = 0; i < NUMBER_OF_RECORD_ROWS; i++)
-	//	if (players[1].score >= records[i].score)
-	//	{
-	//		recordsIndex = i;
-	//		break;
-	//	}
-
-	//if (recordsIndex > -1)
-	//{
-	//	for (int i = recordsIndex; i < NUMBER_OF_RECORD_ROWS - 1; i++)
-	//		records[i + 1] = records[i];
-
-	//	records[recordsIndex].name = players[1].name;
-	//	records[recordsIndex].score = players[1].score;
-	//}
-
-	FILE *recordsFile = NULL;
-	fopen_s(&recordsFile, "records.pt", "wb");
-	fwrite(records, sizeof(RecordRow), NUMBER_OF_RECORD_ROWS, recordsFile);
 	fclose(recordsFile);
 	recordsFile = NULL;
 }
@@ -584,11 +527,9 @@ void InitPlayers(Player players[])
 	}
 
 	// Player 1
-	//strcpy_s(players[0].name, NAME_LENGTH, "Player 1");
 	players[0].tank.body.rect = { 10, 125, 75, 45 };
 
 	// Player 2
-	//strcpy_s(players[1].name, NAME_LENGTH, "Player 2");
 	players[1].tank.body.rect = { SCREEN_WIDTH - players[0].tank.body.rect.w - 10, players[0].tank.body.rect.y,
 		players[0].tank.body.rect.w, players[0].tank.body.rect.h };
 }
@@ -807,45 +748,76 @@ void SetHeadOnPrev(Weapon **headWeapons)
 }
 
 // Hank
+void Draw_A_text(Scene *scene, SDL_Rect background_rect, const char *text, SDL_Color colorFg, SDL_Color colorBg, const char *position, int sizeOfOneChar)
+{
+	SDL_SetRenderDrawColor(scene->renderer, colorBg.r, colorBg.g, colorBg.b, colorBg.a);
+	SDL_RenderFillRect(scene->renderer, &background_rect);
+	int textLength = 0;
+	SDL_Rect textBox = { 0, 0, 0, 0 };
+	// sizeOfOneChar should be 12 for the test
+	textLength = strlen(text);
+	textBox.y = background_rect.y + 2;
+	textBox.w = textLength * sizeOfOneChar - 3;
+	textBox.h = background_rect.h - 4;
+	if (position == "Left") textBox.x = background_rect.x + 3;
+	if (position == "Center") textBox.x = background_rect.x + (int)(background_rect.w / 2.0) - (int)(textBox.w / 2.0);
+
+	SDL_Surface *Surface_text = NULL;
+	SDL_Texture *Texture_text = NULL;
+	Surface_text = TTF_RenderText_Solid(scene->font, text, colorFg);
+	Texture_text = SDL_CreateTextureFromSurface(scene->renderer, Surface_text);
+	SDL_FreeSurface(Surface_text);
+	SDL_RenderCopy(scene->renderer, Texture_text, NULL, &textBox);
+	SDL_DestroyTexture(Texture_text);
+}
+
 void Draw_ALL_BestScoreLines(Scene *scene, RecordRow records[NUMBER_OF_RECORD_ROWS], SDL_Texture *TexturePanelBestScores)
 {
-	SDL_Color colorBlack = { 0, 0, 0 };
-	SDL_Color colorScoresBg = { 128, 128, 0 };
+	SDL_Color colorBlack = { 0, 0, 0, };
+	SDL_Color colorScoresBg = { 128, 128, 0, };
 	for (int i = 0; i < NUMBER_OF_RECORD_ROWS; i++)
 	{
-		if (strcmp(records[i].name, "Empty") != 0)
+		if (_stricmp(records[i].name, "Empty") != 0)
 		{
 			SDL_Rect BestScoreRank_rect = { (int)((71.0 / 90)*SCREEN_WIDTH), (int)((14.0 / 55)*SCREEN_HEIGHT) - (int)(SCREEN_HEIGHT / 20.0) + i * ((int)((3.0 / 55)*SCREEN_HEIGHT)), (int)(SCREEN_WIDTH / 48.0), (int)((3.0 / 55)*SCREEN_HEIGHT) };
-			SDL_Texture * textureBestScoreRank = CreateTextureFromNumber(scene->renderer, scene->font, i + 1, colorBlack, colorScoresBg);
-			SDL_RenderCopy(scene->renderer, textureBestScoreRank, NULL, &BestScoreRank_rect);
+			std::string s = std::to_string(i + 1);
+			s.append(") ");
+			Draw_A_text(scene, BestScoreRank_rect, s.c_str(), colorBlack, colorScoresBg, "Center", 8);
+			/*SDL_Texture * textureBestScoreRank = CreateTextureFromNumber(scene->renderer, scene->font, i + 1, colorBlack, colorScoresBg);
+			SDL_RenderCopy(scene->renderer, textureBestScoreRank, NULL, &BestScoreRank_rect);*/
 
 			SDL_Rect BestScoreName_rect = { BestScoreRank_rect.x + BestScoreRank_rect.w, BestScoreRank_rect.y, (int)((2.0 / 24)*SCREEN_WIDTH), BestScoreRank_rect.h };
-			SDL_Texture * textureBestScoreName = CreateTextureFromText(scene->renderer, scene->font, records[i].name, colorBlack, colorScoresBg);
-			SDL_RenderCopy(scene->renderer, textureBestScoreName, NULL, &BestScoreName_rect);
+			Draw_A_text(scene, BestScoreName_rect, records[i].name, colorBlack, colorScoresBg, "Center", 12);
+			/*SDL_Texture * textureBestScoreName = CreateTextureFromText(scene->renderer, scene->font, records[i].name, colorBlack, colorScoresBg);
+			SDL_RenderCopy(scene->renderer, textureBestScoreName, NULL, &BestScoreName_rect);*/
 
 			SDL_Rect BestScoreScore_rect = { BestScoreName_rect.x + BestScoreName_rect.w, BestScoreRank_rect.y, BestScoreRank_rect.w, BestScoreRank_rect.h };
-			SDL_Texture * textureBestScoreScore = CreateTextureFromNumber(scene->renderer, scene->font, records[i].score, colorBlack, colorScoresBg);
-			SDL_RenderCopy(scene->renderer, textureBestScoreScore, NULL, &BestScoreScore_rect);
+			s = std::to_string(records[i].score);
+			Draw_A_text(scene, BestScoreScore_rect, s.c_str(), colorBlack, colorScoresBg, "Center", 14);
+			/*SDL_Texture * textureBestScoreScore = CreateTextureFromNumber(scene->renderer, scene->font, records[i].score, colorBlack, colorScoresBg);
+			SDL_RenderCopy(scene->renderer, textureBestScoreScore, NULL, &BestScoreScore_rect);*/
 
-			SDL_DestroyTexture(textureBestScoreRank);
+			/*SDL_DestroyTexture(textureBestScoreRank);
 			SDL_DestroyTexture(textureBestScoreName);
-			SDL_DestroyTexture(textureBestScoreScore);
+			SDL_DestroyTexture(textureBestScoreScore);*/
 		}
 	}
 }
 
+/*
 void DrawMsgOnBottonScreen(Scene *scene, const char *Msg)
 {
-	SDL_Color colorBlack = { 0, 0, 0 };
-	SDL_Color colorBg = { 153, 153, 0 };
-	SDL_Rect WordCurrentPlayerChoosing_rect = { (int)((27.0 / 80)*SCREEN_WIDTH), (int)((14.0 / 15)*SCREEN_HEIGHT) + 10, (int)(SCREEN_WIDTH / 7.0), (int)(SCREEN_HEIGHT / 15.0) - 10 };
-	SDL_SetRenderDrawColor(scene->renderer, 153, 153, 0, 0);
-	SDL_RenderFillRect(scene->renderer, &WordCurrentPlayerChoosing_rect);
-	SDL_SetRenderDrawColor(scene->renderer, 0, 0, 0, 0);
-	SDL_Texture * textureCurrentPlayerChoosing = CreateTextureFromText(scene->renderer, scene->font, Msg, colorBlack, colorBg);
-	SDL_RenderCopy(scene->renderer, textureCurrentPlayerChoosing, NULL, &WordCurrentPlayerChoosing_rect);
-	SDL_DestroyTexture(textureCurrentPlayerChoosing);
+SDL_Color colorBlack = { 0, 0, 0 };
+SDL_Color colorBg = { 153, 153, 0 };
+SDL_Rect WordCurrentPlayerChoosing_rect = { (int)((27.0 / 80)*SCREEN_WIDTH), (int)((14.0 / 15)*SCREEN_HEIGHT) + 10, (int)(SCREEN_WIDTH / 7.0), (int)(SCREEN_HEIGHT / 15.0) - 10 };
+SDL_SetRenderDrawColor(scene->renderer, 153, 153, 0, 0);
+SDL_RenderFillRect(scene->renderer, &WordCurrentPlayerChoosing_rect);
+SDL_SetRenderDrawColor(scene->renderer, 0, 0, 0, 0);
+SDL_Texture * textureCurrentPlayerChoosing = CreateTextureFromText(scene->renderer, scene->font, Msg, colorBlack, colorBg);
+SDL_RenderCopy(scene->renderer, textureCurrentPlayerChoosing, NULL, &WordCurrentPlayerChoosing_rect);
+SDL_DestroyTexture(textureCurrentPlayerChoosing);
 }
+*/
 
 void DrawBestScoresPanel(Scene *scene)
 {
@@ -859,14 +831,15 @@ void DrawBestScoresPanel(Scene *scene)
 	SDL_SetRenderDrawColor(scene->renderer, 0, 0, 0, 0);
 	//Drawing word "Best Scores"
 	SDL_Rect WordBestScores_rect = { BestScoresPanel_rect.x, BestScoresPanel_rect.y, BestScoresPanel_rect.w, (int)((3.0 / 55)*SCREEN_HEIGHT) };
-	SDL_Texture * textureWordBestScores = CreateTextureFromText(scene->renderer, scene->font, " Best Scores ", colorGold, colorScoresBg);
+	Draw_A_text(scene, WordBestScores_rect, " Best Scores ", colorGold, colorScoresBg, "Center", 10);
+
+	/*SDL_Texture * textureWordBestScores = CreateTextureFromText(scene->renderer, scene->font, " Best Scores ", colorGold, colorScoresBg);
 	SDL_RenderCopy(scene->renderer, textureWordBestScores, NULL, &WordBestScores_rect);
-	SDL_DestroyTexture(textureWordBestScores);
+	SDL_DestroyTexture(textureWordBestScores);*/
 
 	//Prepare and Draw the best scores
 	RecordRow records[NUMBER_OF_RECORD_ROWS];
 	LoadRecords(records);
-
 
 	Draw_ALL_BestScoreLines(scene, records, TexturePanelBestScores);
 
@@ -934,14 +907,17 @@ bool CreateAndDrawStartMenu(Scene *scene)
 	SDL_Rect Button1Player_rect = { (int)((27.0 / 80)*SCREEN_WIDTH), (int)((17.0 / 60)*SCREEN_HEIGHT), (int)(SCREEN_WIDTH / 6.0), (int)(SCREEN_HEIGHT / 12.0) };
 	SDL_Rect Button2Players_rect = { (int)((27.0 / 80)*SCREEN_WIDTH), (int)((17.0 / 60)*SCREEN_HEIGHT) + Button1Player_rect.h + 100, Button1Player_rect.w, Button1Player_rect.h };
 
-	SDL_Texture * textureButton1Player = CreateTextureFromText(scene->renderer, scene->font, " 1 PLAYER ", colorBlack, colorGrey);
+	Draw_A_text(scene, Button1Player_rect, " 1 PLAYER ", colorBlack, colorGrey, "Center", 15);
+	Draw_A_text(scene, Button2Players_rect, " 2 PLAYERS ", colorBlack, colorGrey, "Center", 15);
+
+	/*SDL_Texture * textureButton1Player = CreateTextureFromText(scene->renderer, scene->font, " 1 PLAYER ", colorBlack, colorGrey);
 	SDL_Texture * textureButton2Players = CreateTextureFromText(scene->renderer, scene->font, " 2 PLAYERS ", colorBlack, colorGrey);
 
 	SDL_RenderCopy(scene->renderer, textureButton1Player, NULL, &Button1Player_rect);
 	SDL_RenderCopy(scene->renderer, textureButton2Players, NULL, &Button2Players_rect);
 
 	SDL_DestroyTexture(textureButton1Player);
-	SDL_DestroyTexture(textureButton2Players);
+	SDL_DestroyTexture(textureButton2Players);*/
 
 	SDL_SetRenderTarget(scene->renderer, TextureMenuStart);
 	SDL_RenderPresent(scene->renderer);
@@ -953,9 +929,11 @@ bool CreateAndDrawStartMenu(Scene *scene)
 
 	//Drawing the button "Quit the Game"	
 	SDL_Rect ButtonQuitTheGame_rect = { (int)((71.0 / 90)*SCREEN_WIDTH), (int)((14.0 / 15)*SCREEN_HEIGHT), (int)(SCREEN_WIDTH / 8.0), (int)(SCREEN_HEIGHT / 15.0) };
-	SDL_Texture * textureButtonQuitTheGame = CreateTextureFromText(scene->renderer, scene->font, " Quit The Game ", colorBlack, colorGrey);
+	Draw_A_text(scene, ButtonQuitTheGame_rect, "Quit Game", colorBlack, colorGrey, "Center", 12);
+	/*SDL_Texture * textureButtonQuitTheGame = CreateTextureFromText(scene->renderer, scene->font, " Quit The Game ", colorBlack, colorGrey);
 	SDL_RenderCopy(scene->renderer, textureButtonQuitTheGame, NULL, &ButtonQuitTheGame_rect);
-	SDL_DestroyTexture(textureButtonQuitTheGame);
+	SDL_DestroyTexture(textureButtonQuitTheGame);*/
+
 	SDL_RenderPresent(scene->renderer);
 
 	//Initializing the players's names with test values
@@ -972,10 +950,6 @@ bool CreateAndDrawStartMenu(Scene *scene)
 			if (scene->event.type == SDL_QUIT)ExitWhileInMenu(scene);
 			if (scene->event.type == SDL_MOUSEBUTTONDOWN && scene->event.button.button == SDL_BUTTON_LEFT)
 			{
-				time(&enter_time);
-				do {
-					time(&finishFirstScreen_time);
-				} while (difftime(finishFirstScreen_time, enter_time) < 1);
 				SecondMenuScreenInterations(scene, Button1Player_rect, Button2Players_rect, ButtonQuitTheGame_rect);
 				break;
 			}
@@ -993,7 +967,14 @@ void SecondMenuScreenInterations(Scene *scene, SDL_Rect Button1Player_rect, SDL_
 		true;
 	if ((scene->event.button.x >= Button2Players_rect.x) && (scene->event.button.x <= Button2Players_rect.x + Button2Players_rect.w)
 		&& (scene->event.button.y >= Button2Players_rect.y) && (scene->event.button.y <= Button2Players_rect.y + Button2Players_rect.h))
+	{
+		time_t enter_time, finishFirstScreen_time;
+		time(&enter_time);
+		do {
+			time(&finishFirstScreen_time);
+		} while (difftime(finishFirstScreen_time, enter_time) < 1);
 		CreateAndDraw2PlayersMenu(scene);
+	}
 	if ((scene->event.button.x >= ButtonQuitTheGame_rect.x) && (scene->event.button.x <= ButtonQuitTheGame_rect.x + ButtonQuitTheGame_rect.w)
 		&& (scene->event.button.y >= ButtonQuitTheGame_rect.y) && (scene->event.button.y <= ButtonQuitTheGame_rect.y + ButtonQuitTheGame_rect.h))
 		ExitWhileInMenu(scene);
@@ -1053,9 +1034,10 @@ void CreateAndDraw2PlayersMenu(Scene *scene)
 
 	//Draw the Weapons to the center of the screen for their selection
 	SDL_Rect ChooseWeapons_rect = { (int)((27.0 / 80)*SCREEN_WIDTH), BlancForWeapons1_rect.y, (int)(SCREEN_WIDTH / 7.0), (int)((3.0 / 55)*SCREEN_HEIGHT) };
-	SDL_Texture * textureChooseWeapons = CreateTextureFromText(scene->renderer, scene->font, "Choose Weapons:", colorBlack, colorBg);
+	Draw_A_text(scene, ChooseWeapons_rect, "Choose Weapons:", colorBlack, colorBg, "Center", 12);
+	/*SDL_Texture * textureChooseWeapons = CreateTextureFromText(scene->renderer, scene->font, "Choose Weapons:", colorBlack, colorBg);
 	SDL_RenderCopy(scene->renderer, textureChooseWeapons, NULL, &ChooseWeapons_rect);
-	SDL_DestroyTexture(textureChooseWeapons);
+	SDL_DestroyTexture(textureChooseWeapons);*/
 
 	//Draw landscapes
 	SDL_Rect WordLandscape_rect = { (int)(SCREEN_WIDTH / 30.0), (int)((4.0 / 5)*SCREEN_HEIGHT) - (int)(SCREEN_HEIGHT / 20.0) + 10, (int)(SCREEN_WIDTH / 8.0), (int)(SCREEN_HEIGHT / 15.0) - 10 };
@@ -1085,24 +1067,27 @@ void CreateAndDraw2PlayersMenu(Scene *scene)
 
 	//Draw Button "Restart"
 	SDL_Color colorButtonRestart = { 128, 128, 0 };
-	SDL_Rect ButtonRestart_rect = { 0, (int)((13.0 / 15)*SCREEN_HEIGHT), (int)(SCREEN_WIDTH / 16.0), (int)(SCREEN_HEIGHT / 15.0) };
-	SDL_Texture * textureButtonRestart = CreateTextureFromText(scene->renderer, scene->font, "Restart", colorBlack, colorButtonRestart);
+	SDL_Rect ButtonRestart_rect = { BlancForWeapons1_rect.x, (int)((13.0 / 15)*SCREEN_HEIGHT), (int)(SCREEN_WIDTH / 16.0), (int)(SCREEN_HEIGHT / 15.0) };
+	Draw_A_text(scene, ButtonRestart_rect, "Restart", colorBlack, colorButtonRestart, "Center", 8);
+	/*SDL_Texture * textureButtonRestart = CreateTextureFromText(scene->renderer, scene->font, "Restart", colorBlack, colorButtonRestart);
 	SDL_RenderCopy(scene->renderer, textureButtonRestart, NULL, &ButtonRestart_rect);
-	SDL_DestroyTexture(textureButtonRestart);
+	SDL_DestroyTexture(textureButtonRestart);*/
 
 	//Draw Button "Randomly"
 
 	SDL_Rect ButtonRandomly_rect = { (int)((27.0 / 80)*SCREEN_WIDTH), ButtonRestart_rect.y, (int)(SCREEN_WIDTH / 7.0), ButtonRestart_rect.h };
-	SDL_Texture * textureButtonRandomly = CreateTextureFromText(scene->renderer, scene->font, "Randomly", colorBlack, colorScoresBg);
+	Draw_A_text(scene, ButtonRandomly_rect, "Randomly", colorBlack, colorScoresBg, "Center", 12);
+	/*SDL_Texture * textureButtonRandomly = CreateTextureFromText(scene->renderer, scene->font, "Randomly", colorBlack, colorScoresBg);
 	SDL_RenderCopy(scene->renderer, textureButtonRandomly, NULL, &ButtonRandomly_rect);
-	SDL_DestroyTexture(textureButtonRandomly);
+	SDL_DestroyTexture(textureButtonRandomly);*/
 
 	//Draw Button "Play"
 	SDL_Color colorButtonPlay = { 153, 153, 100 };
-	SDL_Rect ButtonPlay_rect = { (int)((80.0 / 100)*SCREEN_WIDTH) - ButtonRestart_rect.w, ButtonRestart_rect.y, ButtonRestart_rect.w, ButtonRestart_rect.h };
-	SDL_Texture * textureButtonPlay = CreateTextureFromText(scene->renderer, scene->font, "Play", colorBlack, colorButtonPlay);
+	SDL_Rect ButtonPlay_rect = { BlancForWeapons2_rect.x + BlancForWeapons2_rect.w - ButtonRestart_rect.w, ButtonRestart_rect.y, ButtonRestart_rect.w, ButtonRestart_rect.h };
+	Draw_A_text(scene, ButtonPlay_rect, "Play", colorBlack, colorButtonPlay, "Center", 12);
+	/*SDL_Texture * textureButtonPlay = CreateTextureFromText(scene->renderer, scene->font, "Play", colorBlack, colorButtonPlay);
 	SDL_RenderCopy(scene->renderer, textureButtonPlay, NULL, &ButtonPlay_rect);
-	SDL_DestroyTexture(textureButtonPlay);
+	SDL_DestroyTexture(textureButtonPlay);*/
 
 	//Draw Weapons 
 	SDL_Rect LollyBomb_rect = { (int)((11.0 / 40)*SCREEN_WIDTH), ChooseWeapons_rect.y + ChooseWeapons_rect.h, (int)(SCREEN_WIDTH / 8.0) - 10, (int)((3.0 / 55)*SCREEN_HEIGHT) - 10 };
@@ -1112,63 +1097,62 @@ void CreateAndDraw2PlayersMenu(Scene *scene)
 	SDL_Rect ChineseWall_rect = { LollyBomb_rect.x, Ravine_rect.y + Ravine_rect.h + 10, LollyBomb_rect.w, LollyBomb_rect.h };
 	SDL_Rect Pineaple_rect = { Laser_rect.x, LollyBomb2_rect.y + LollyBomb2_rect.h + 10, Laser_rect.w, Laser_rect.h };
 
-	SDL_Texture * textureLollyBomb = CreateTextureFromText(scene->renderer, scene->font, "Lolly Bomb", colorBlack, colorScoresBg);
+	/*SDL_Texture * textureLollyBomb = CreateTextureFromText(scene->renderer, scene->font, "Lolly Bomb", colorBlack, colorScoresBg);
 	SDL_Texture * textureLaser = CreateTextureFromText(scene->renderer, scene->font, "Laser", colorBlack, colorScoresBg);
 	SDL_Texture * textureRavine = CreateTextureFromText(scene->renderer, scene->font, "Ravine", colorBlack, colorScoresBg);
 	SDL_Texture * textureLollyBomb2 = CreateTextureFromText(scene->renderer, scene->font, "Lolly Bomb 2.0", colorBlack, colorScoresBg);
 	SDL_Texture * textureChineseWall = CreateTextureFromText(scene->renderer, scene->font, "Chinese Wall", colorBlack, colorScoresBg);
-	SDL_Texture * texturePineaple = CreateTextureFromText(scene->renderer, scene->font, "Pineaple", colorBlack, colorScoresBg);
+	SDL_Texture * texturePineaple = CreateTextureFromText(scene->renderer, scene->font, "Pineaple", colorBlack, colorScoresBg);*/
 
 	clock_t Begin_time = clock();
 	clock_t End_time;
 	do {
 		End_time = clock();
 	} while ((float(End_time - Begin_time) / CLOCKS_PER_SEC) <= 0.5);
-	SDL_RenderCopy(scene->renderer, textureLollyBomb, NULL, &LollyBomb_rect);
-	/*SDL_SetRenderTarget(scene->renderer, TextureMainMenuStart);*/
-	SDL_RenderPresent(scene->renderer);
-	Begin_time = clock();
-	do {
-		End_time = clock();
-	} while ((float(End_time - Begin_time) / CLOCKS_PER_SEC) <= 0.5);
-	SDL_RenderCopy(scene->renderer, textureLaser, NULL, &Laser_rect);
-	/*SDL_SetRenderTarget(scene->renderer, TextureMainMenuStart);*/
-	SDL_RenderPresent(scene->renderer);
-	Begin_time = clock();
-	do {
-		End_time = clock();
-	} while ((float(End_time - Begin_time) / CLOCKS_PER_SEC) <= 0.5);
-	SDL_RenderCopy(scene->renderer, textureRavine, NULL, &Ravine_rect);
-	/*SDL_SetRenderTarget(scene->renderer, TextureMainMenuStart);*/
-	SDL_RenderPresent(scene->renderer);
-	Begin_time = clock();
-	do {
-		End_time = clock();
-	} while ((float(End_time - Begin_time) / CLOCKS_PER_SEC) <= 0.5);
-	SDL_RenderCopy(scene->renderer, textureLollyBomb2, NULL, &LollyBomb2_rect);
-	/*SDL_SetRenderTarget(scene->renderer, TextureMainMenuStart);*/
-	SDL_RenderPresent(scene->renderer);
-	Begin_time = clock();
-	do {
-		End_time = clock();
-	} while ((float(End_time - Begin_time) / CLOCKS_PER_SEC) <= 0.5);
-	SDL_RenderCopy(scene->renderer, textureChineseWall, NULL, &ChineseWall_rect);
-	/*SDL_SetRenderTarget(scene->renderer, TextureMainMenuStart);*/
-	SDL_RenderPresent(scene->renderer);
-	Begin_time = clock();
-	do {
-		End_time = clock();
-	} while ((float(End_time - Begin_time) / CLOCKS_PER_SEC) <= 0.5);
-	SDL_RenderCopy(scene->renderer, texturePineaple, NULL, &Pineaple_rect);
+	Draw_A_text(scene, LollyBomb_rect, "Lolly Bomb", colorBlack, colorScoresBg, "Center", 9);
 	SDL_RenderPresent(scene->renderer);
 
-	SDL_DestroyTexture(textureLollyBomb);
+	Begin_time = clock();
+	do {
+		End_time = clock();
+	} while ((float(End_time - Begin_time) / CLOCKS_PER_SEC) <= 0.5);
+	Draw_A_text(scene, Laser_rect, "Laser", colorBlack, colorScoresBg, "Center", 9);
+	SDL_RenderPresent(scene->renderer);
+
+	Begin_time = clock();
+	do {
+		End_time = clock();
+	} while ((float(End_time - Begin_time) / CLOCKS_PER_SEC) <= 0.5);
+	Draw_A_text(scene, Ravine_rect, "Ravine", colorBlack, colorScoresBg, "Center", 9);
+	SDL_RenderPresent(scene->renderer);
+
+	Begin_time = clock();
+	do {
+		End_time = clock();
+	} while ((float(End_time - Begin_time) / CLOCKS_PER_SEC) <= 0.5);
+	Draw_A_text(scene, LollyBomb2_rect, "Lolly Bomb 2.0", colorBlack, colorScoresBg, "Center", 8);
+	SDL_RenderPresent(scene->renderer);
+
+	Begin_time = clock();
+	do {
+		End_time = clock();
+	} while ((float(End_time - Begin_time) / CLOCKS_PER_SEC) <= 0.5);
+	Draw_A_text(scene, ChineseWall_rect, "Chinese Wall", colorBlack, colorScoresBg, "Center", 8);
+	SDL_RenderPresent(scene->renderer);
+
+	Begin_time = clock();
+	do {
+		End_time = clock();
+	} while ((float(End_time - Begin_time) / CLOCKS_PER_SEC) <= 0.5);
+	Draw_A_text(scene, Pineaple_rect, "Pineaple", colorBlack, colorScoresBg, "Center", 9);
+	SDL_RenderPresent(scene->renderer);
+
+	/*SDL_DestroyTexture(textureLollyBomb);
 	SDL_DestroyTexture(textureLaser);
 	SDL_DestroyTexture(textureRavine);
 	SDL_DestroyTexture(textureLollyBomb2);
 	SDL_DestroyTexture(textureChineseWall);
-	SDL_DestroyTexture(texturePineaple);
-
+	SDL_DestroyTexture(texturePineaple);*/
 
 	//Interactions on the Third Screen
 	SDL_Rect ButtonQuitTheGame_rect = { (int)((71.0 / 90)*SCREEN_WIDTH), (int)((14.0 / 15)*SCREEN_HEIGHT), (int)(SCREEN_WIDTH / 8.0), (int)(SCREEN_HEIGHT / 15.0) };
@@ -1217,19 +1201,17 @@ void CreateAndDraw2PlayersMenu(Scene *scene)
 	//*/
 	//NamesEntered = true;
 
-
-
 	//Event for Choosing Weapons
 	scene->players[0].NbrWeapons = 0;
 	scene->players[1].NbrWeapons = 0;
-	const char *Msg3;
-	Msg3 = "Choose Weapons...";
-	DrawMsgOnBottonScreen(scene, Msg3);
+	SDL_Rect WordCurrentPlayerChoosing_rect = { (int)((27.0 / 80)*SCREEN_WIDTH), (int)((14.0 / 15)*SCREEN_HEIGHT) + 10, (int)(SCREEN_WIDTH / 7.0), (int)(SCREEN_HEIGHT / 15.0) - 10 };
+	Draw_A_text(scene, WordCurrentPlayerChoosing_rect, "Choose Weapons...", colorBlack, colorBg, "Center", 8);
 	SDL_RenderPresent(scene->renderer);
 	scene->playerLap = 1;
 	bool WeaponsChoosed = false, Selected_A_Weapon = false;
 	while (WeaponsChoosed != true)
 	{
+
 		while (SDL_PollEvent(&scene->event))
 		{
 			if (scene->event.type == SDL_QUIT)ExitWhileInMenu(scene);
@@ -1256,13 +1238,11 @@ void CreateAndDraw2PlayersMenu(Scene *scene)
 					Selected_A_Weapon = true;
 					SDL_SetRenderDrawColor(scene->renderer, 153, 153, 0, 0);
 					SDL_RenderFillRect(scene->renderer, &LollyBomb_rect);
-					DrawWeaponInsidePanel(scene, " Lolly Bomb ");
+					DrawWeaponInsidePanel(scene, "Lolly Bomb", 10);
 					if (Choosed_LollyBomb == true && Choosed_Laser == true && Choosed_Ravine == true && Choosed_LollyBomb2 == true && Choosed_ChineseWall == true && Choosed_Pineaple == true)
 					{
 						WeaponsChoosed = true;
-						const char *Msg4;
-						Msg4 = "Choose Landscape...";
-						DrawMsgOnBottonScreen(scene, Msg4);
+						Draw_A_text(scene, WordCurrentPlayerChoosing_rect, "Choose Landscape...", colorBlack, colorBg, "Center", 7);
 					}
 					SDL_RenderPresent(scene->renderer);
 					break;
@@ -1284,14 +1264,12 @@ void CreateAndDraw2PlayersMenu(Scene *scene)
 					Selected_A_Weapon = true;
 					SDL_SetRenderDrawColor(scene->renderer, 153, 153, 0, 0);
 					SDL_RenderFillRect(scene->renderer, &Laser_rect);
-					DrawWeaponInsidePanel(scene, " Laser ");
+					DrawWeaponInsidePanel(scene, "Laser", 10);
 					SDL_RenderPresent(scene->renderer);
 					if (Choosed_LollyBomb == true && Choosed_Laser == true && Choosed_Ravine == true && Choosed_LollyBomb2 == true && Choosed_ChineseWall == true && Choosed_Pineaple == true)
 					{
 						WeaponsChoosed = true;
-						const char *Msg4;
-						Msg4 = "Choose Landscape...";
-						DrawMsgOnBottonScreen(scene, Msg4);
+						Draw_A_text(scene, WordCurrentPlayerChoosing_rect, "Choose Landscape...", colorBlack, colorBg, "Center", 7);
 					}
 					SDL_RenderPresent(scene->renderer);
 					break;
@@ -1313,14 +1291,12 @@ void CreateAndDraw2PlayersMenu(Scene *scene)
 					Selected_A_Weapon = true;
 					SDL_SetRenderDrawColor(scene->renderer, 153, 153, 0, 0);
 					SDL_RenderFillRect(scene->renderer, &Ravine_rect);
-					DrawWeaponInsidePanel(scene, " Ravine ");
+					DrawWeaponInsidePanel(scene, "Ravine", 10);
 					SDL_RenderPresent(scene->renderer);
 					if (Choosed_LollyBomb == true && Choosed_Laser == true && Choosed_Ravine == true && Choosed_LollyBomb2 == true && Choosed_ChineseWall == true && Choosed_Pineaple == true)
 					{
 						WeaponsChoosed = true;
-						const char *Msg4;
-						Msg4 = "Choose Landscape...";
-						DrawMsgOnBottonScreen(scene, Msg4);
+						Draw_A_text(scene, WordCurrentPlayerChoosing_rect, "Choose Landscape...", colorBlack, colorBg, "Center", 7);
 					}
 					SDL_RenderPresent(scene->renderer);
 					break;
@@ -1342,14 +1318,12 @@ void CreateAndDraw2PlayersMenu(Scene *scene)
 					Selected_A_Weapon = true;
 					SDL_SetRenderDrawColor(scene->renderer, 153, 153, 0, 0);
 					SDL_RenderFillRect(scene->renderer, &LollyBomb2_rect);
-					DrawWeaponInsidePanel(scene, " Lolly Bomb 2.0 ");
+					DrawWeaponInsidePanel(scene, "Lolly Bomb 2.0", 8);
 					SDL_RenderPresent(scene->renderer);
 					if (Choosed_LollyBomb == true && Choosed_Laser == true && Choosed_Ravine == true && Choosed_LollyBomb2 == true && Choosed_ChineseWall == true && Choosed_Pineaple == true)
 					{
 						WeaponsChoosed = true;
-						const char *Msg4;
-						Msg4 = "Choose Landscape...";
-						DrawMsgOnBottonScreen(scene, Msg4);
+						Draw_A_text(scene, WordCurrentPlayerChoosing_rect, "Choose Landscape...", colorBlack, colorBg, "Center", 7);
 					}
 					SDL_RenderPresent(scene->renderer);
 					break;
@@ -1371,14 +1345,12 @@ void CreateAndDraw2PlayersMenu(Scene *scene)
 					Selected_A_Weapon = true;
 					SDL_SetRenderDrawColor(scene->renderer, 153, 153, 0, 0);
 					SDL_RenderFillRect(scene->renderer, &ChineseWall_rect);
-					DrawWeaponInsidePanel(scene, " Chinese Wall ");
+					DrawWeaponInsidePanel(scene, "Chinese Wall", 8);
 					SDL_RenderPresent(scene->renderer);
 					if (Choosed_LollyBomb == true && Choosed_Laser == true && Choosed_Ravine == true && Choosed_LollyBomb2 == true && Choosed_ChineseWall == true && Choosed_Pineaple == true)
 					{
 						WeaponsChoosed = true;
-						const char *Msg4;
-						Msg4 = "Choose Landscape...";
-						DrawMsgOnBottonScreen(scene, Msg4);
+						Draw_A_text(scene, WordCurrentPlayerChoosing_rect, "Choose Landscape...", colorBlack, colorBg, "Center", 7);
 					}
 					SDL_RenderPresent(scene->renderer);
 					break;
@@ -1400,14 +1372,12 @@ void CreateAndDraw2PlayersMenu(Scene *scene)
 					Selected_A_Weapon = true;
 					SDL_SetRenderDrawColor(scene->renderer, 153, 153, 0, 0);
 					SDL_RenderFillRect(scene->renderer, &Pineaple_rect);
-					DrawWeaponInsidePanel(scene, " Pineaple ");
+					DrawWeaponInsidePanel(scene, "Pineaple", 10);
 					SDL_RenderPresent(scene->renderer);
 					if (Choosed_LollyBomb == true && Choosed_Laser == true && Choosed_Ravine == true && Choosed_LollyBomb2 == true && Choosed_ChineseWall == true && Choosed_Pineaple == true)
 					{
 						WeaponsChoosed = true;
-						const char *Msg4;
-						Msg4 = "Choose Landscape...";
-						DrawMsgOnBottonScreen(scene, Msg4);
+						Draw_A_text(scene, WordCurrentPlayerChoosing_rect, "Choose Landscape...", colorBlack, colorBg, "Center", 7);
 					}
 					SDL_RenderPresent(scene->renderer);
 					break;
@@ -1485,15 +1455,15 @@ void CreateAndDraw2PlayersMenu(Scene *scene)
 	if (WeaponsChoosed == true && LandscapeChoosed == true)
 	{
 		//Change the color of the button "Play" and check for the click on it.
-		const char *Msg5;
-		Msg5 = "Click On Play";
-		DrawMsgOnBottonScreen(scene, Msg5);
+		Draw_A_text(scene, WordCurrentPlayerChoosing_rect, "Click On Play...", colorBlack, colorBg, "Center", 8);
+
 		SDL_Color colorButtonPlay2 = { 0, 102, 0 };
-		SDL_SetRenderDrawColor(scene->renderer, 0, 102, 0, 0);
+		Draw_A_text(scene, ButtonPlay_rect, "Play", colorBlack, colorButtonPlay2, "Center", 10);
+		/*SDL_SetRenderDrawColor(scene->renderer, 0, 102, 0, 0);
 		SDL_RenderFillRect(scene->renderer, &ButtonPlay_rect);
 		SDL_Texture * textureButtonPlay2 = CreateTextureFromText(scene->renderer, scene->font, "Play", colorBlack, colorButtonPlay2);
 		SDL_RenderCopy(scene->renderer, textureButtonPlay2, NULL, &ButtonPlay_rect);
-		SDL_DestroyTexture(textureButtonPlay);
+		SDL_DestroyTexture(textureButtonPlay);*/
 		SDL_RenderPresent(scene->renderer);
 
 		bool ClickOnPlay = false;
@@ -1523,29 +1493,31 @@ void CreateAndDraw2PlayersMenu(Scene *scene)
 	}
 }
 
-void DrawWeaponInsidePanel(Scene *scene, const char *NameWeapon)
+void DrawWeaponInsidePanel(Scene *scene, const char *NameWeapon, int sizeOfOneChar)
 {
 	SDL_Color colorBlack = { 0, 0, 0 };
 	SDL_Color colorScoresBg = { 128, 128, 0 };
-	SDL_Rect Player1_rect = { (int)(SCREEN_WIDTH / 30.0), (int)((3.0 / 40)*SCREEN_HEIGHT), (int)(SCREEN_WIDTH / 8.0), (int)(SCREEN_HEIGHT / 20.0) };
-	SDL_Rect Player2_rect = { (int)((77.0 / 120)*SCREEN_WIDTH), Player1_rect.y, Player1_rect.w, Player1_rect.h };
+	SDL_Rect Player1_rect = { (int)(SCREEN_WIDTH / 30.0) + 1, (int)((3.0 / 40)*SCREEN_HEIGHT) + 1, (int)(SCREEN_WIDTH / 8.0) - 2, (int)(SCREEN_HEIGHT / 20.0) - 2 };
+	SDL_Rect Player2_rect = { (int)((77.0 / 120)*SCREEN_WIDTH) + 1, Player1_rect.y, Player1_rect.w, Player1_rect.h };
 	SDL_Rect BlancForWeapons1_rect = { Player1_rect.x, (int)((11.0 / 80)*SCREEN_HEIGHT), Player1_rect.w, (int)((3.0 / 5)*SCREEN_HEIGHT) };
 	SDL_Rect BlancForWeapons2_rect = { Player2_rect.x, BlancForWeapons1_rect.y, BlancForWeapons1_rect.w, BlancForWeapons1_rect.h };
 	SDL_Rect WeaponOnPlayerList_rect;
-	SDL_Texture * textureWeaponName;
+	/*SDL_Texture * textureWeaponName;*/
 	if (scene->playerLap == 1)
 	{
 		WeaponOnPlayerList_rect = { BlancForWeapons1_rect.x, BlancForWeapons1_rect.y + scene->players[scene->playerLap - 1].NbrWeapons * (int)(BlancForWeapons1_rect.h / 10.0), BlancForWeapons1_rect.w,  (int)(BlancForWeapons1_rect.h / 10.0) };
-		textureWeaponName = CreateTextureFromText(scene->renderer, scene->font, NameWeapon, colorBlack, colorScoresBg);
+		Draw_A_text(scene, WeaponOnPlayerList_rect, NameWeapon, colorBlack, colorScoresBg, "Center", sizeOfOneChar);
+		/*textureWeaponName = CreateTextureFromText(scene->renderer, scene->font, NameWeapon, colorBlack, colorScoresBg);
 		SDL_RenderCopy(scene->renderer, textureWeaponName, NULL, &WeaponOnPlayerList_rect);
-		SDL_DestroyTexture(textureWeaponName);
+		SDL_DestroyTexture(textureWeaponName);*/
 	}
 	if (scene->playerLap == 2)
 	{
 		WeaponOnPlayerList_rect = { BlancForWeapons2_rect.x, BlancForWeapons2_rect.y + scene->players[scene->playerLap - 1].NbrWeapons * (int)(BlancForWeapons2_rect.h / 10.0), BlancForWeapons2_rect.w,  (int)(BlancForWeapons2_rect.h / 10.0) };
-		textureWeaponName = CreateTextureFromText(scene->renderer, scene->font, NameWeapon, colorBlack, colorScoresBg);
+		Draw_A_text(scene, WeaponOnPlayerList_rect, NameWeapon, colorBlack, colorScoresBg, "Center", sizeOfOneChar);
+		/*textureWeaponName = CreateTextureFromText(scene->renderer, scene->font, NameWeapon, colorBlack, colorScoresBg);
 		SDL_RenderCopy(scene->renderer, textureWeaponName, NULL, &WeaponOnPlayerList_rect);
-		SDL_DestroyTexture(textureWeaponName);
+		SDL_DestroyTexture(textureWeaponName);*/
 	}
 	scene->players[scene->playerLap - 1].NbrWeapons++;
 }
@@ -1935,7 +1907,7 @@ SDL_Texture * CreateTextureFromNumber(SDL_Renderer *renderer, TTF_Font *font, in
 void CreateAndDrawTopPanels(SDL_Renderer *renderer, TTF_Font *font, Player players[], PlayerTopPanel topPanels[])
 {
 	SDL_Color fg = { 0, 0, 0 };
-	SDL_Color bg = { 0, 102, 0, 1 };
+	SDL_Color bg = { 0, 102, 0 };
 	SDL_Color colorGold = { 255, 215, 0 };
 	for (int i = 0; i <= 1; i++)
 	{
@@ -1954,96 +1926,141 @@ void CreateAndDrawTopPanels(SDL_Renderer *renderer, TTF_Font *font, Player playe
 	}
 }
 
-void DrawBottomPanel(SDL_Renderer *renderer, SDL_Texture* TextureBottomPanel, SDL_Texture * ButtonUp, SDL_Texture * ButtonDown, SDL_Texture * ButtonLeft, SDL_Texture * ButtonRight, SDL_Texture * textureGunName, SDL_Texture * textureGunAngle, SDL_Texture * textureGunPuissance, int i)
+/*void DrawBottomPanel(SDL_Renderer *renderer, SDL_Texture* TextureBottomPanel, SDL_Texture * ButtonUp, SDL_Texture * ButtonDown, SDL_Texture * ButtonLeft, SDL_Texture * ButtonRight, SDL_Texture * textureGunName, SDL_Texture * textureGunAngle, SDL_Texture * textureGunPuissance, int i)
 {
-	int Button1_x, Button1_y, Button1_w, Button1_h, Button2_x, Button2_y, Button2_w, Button2_h, Button3_x, Button3_y, Button3_w, Button3_h;
-	if (i == 0)
-	{
-		Button1_x = (int)SCREEN_WIDTH / 30;
-		Button1_y = (int)SCREEN_HEIGHT*(33.0 / 40);
-		Button1_w = Button1_x * 4;
-		Button1_h = (int)SCREEN_HEIGHT / 20.0;
+int Button1_x, Button1_y, Button1_w, Button1_h, Button2_x, Button2_y, Button2_w, Button2_h, Button3_x, Button3_y, Button3_w, Button3_h;
+if (i == 0)
+{
+Button1_x = (int)SCREEN_WIDTH / 30;
+Button1_y = (int)SCREEN_HEIGHT*(33.0 / 40);
+Button1_w = Button1_x * 4;
+Button1_h = (int)SCREEN_HEIGHT / 20.0;
 
-		Button2_x = Button1_x * 6;
-		Button2_y = Button1_y;
-		Button2_w = (int)Button1_w / 2;
-		Button2_h = Button1_h;
+Button2_x = Button1_x * 6;
+Button2_y = Button1_y;
+Button2_w = (int)Button1_w / 2;
+Button2_h = Button1_h;
 
-		Button3_x = (int)SCREEN_WIDTH*(3.0 / 10);
-		Button3_y = Button2_y + Button2_h;
-		Button3_w = (int)Button2_w / 3;
-		Button3_h = Button1_h;
-	}
-	else {
-		Button1_x = (int)SCREEN_WIDTH*(5.0 / 6);
-		Button1_y = (int)SCREEN_HEIGHT*(33.0 / 40);
-		Button1_w = (int)SCREEN_WIDTH*(2.0 / 15);
-		Button1_h = (int)SCREEN_HEIGHT / 20.0;
-
-		Button2_x = (int)SCREEN_WIDTH*(11.0 / 15);
-		Button2_y = Button1_y;
-		Button2_w = (int)Button1_w / 2;
-		Button2_h = Button1_h;
-
-		Button3_x = (int)SCREEN_WIDTH*(19.0 / 30);
-		Button3_y = Button2_y + Button2_h;
-		Button3_w = (int)Button2_w / 3;
-		Button3_h = Button1_h;
-	}
-	SDL_Rect Button1Up_rect = { Button1_x, Button1_y, Button1_w, Button1_h };
-	SDL_Rect Gun_rect = { Button1_x, Button1_y + Button1_h, Button1_w, Button1_h };
-	SDL_Rect Button1Down_rect = { Button1_x, Button1_y + Button1_h * 2, Button1_w, Button1_h };
-
-	SDL_Rect Button2Up_rect = { Button2_x, Button2_y, Button2_w, Button2_h };
-	SDL_Rect Angle_rect = { Button2_x, Button2_y + Button2_h, Button2_w, Button2_h };
-	SDL_Rect Button2Down_rect = { Button2_x, Button2_y + Button2_h * 2, Button2_w, Button2_h };
-
-	SDL_Rect Button3Left_rect = { Button3_x, Button3_y, Button3_w, Button3_h };
-	SDL_Rect Power_rect = { Button3_x + Button3_w, Button3_y, Button3_w, Button3_h };
-	SDL_Rect Button3Right_rect = { Button3_x + Button3_w * 2, Button3_y, Button3_w, Button3_h };
-
-	SDL_RenderCopy(renderer, ButtonUp, NULL, &Button1Up_rect);
-	SDL_RenderCopy(renderer, textureGunName, NULL, &Gun_rect);
-	SDL_RenderCopy(renderer, ButtonDown, NULL, &Button1Down_rect);
-
-	SDL_RenderCopy(renderer, ButtonUp, NULL, &Button2Up_rect);
-	SDL_RenderCopy(renderer, textureGunAngle, NULL, &Angle_rect);
-	SDL_RenderCopy(renderer, ButtonDown, NULL, &Button2Down_rect);
-
-	SDL_RenderCopy(renderer, ButtonLeft, NULL, &Button3Left_rect);
-	SDL_RenderCopy(renderer, textureGunPuissance, NULL, &Power_rect);
-	SDL_RenderCopy(renderer, ButtonRight, NULL, &Button3Right_rect);
+Button3_x = (int)SCREEN_WIDTH*(3.0 / 10);
+Button3_y = Button2_y + Button2_h;
+Button3_w = (int)Button2_w / 3;
+Button3_h = Button1_h;
 }
+else {
+Button1_x = (int)SCREEN_WIDTH*(5.0 / 6);
+Button1_y = (int)SCREEN_HEIGHT*(33.0 / 40);
+Button1_w = (int)SCREEN_WIDTH*(2.0 / 15);
+Button1_h = (int)SCREEN_HEIGHT / 20.0;
 
-void CreateAndDrawBottomPanels(SDL_Renderer *renderer, TTF_Font *font, Player players[])
+Button2_x = (int)SCREEN_WIDTH*(11.0 / 15);
+Button2_y = Button1_y;
+Button2_w = (int)Button1_w / 2;
+Button2_h = Button1_h;
+
+Button3_x = (int)SCREEN_WIDTH*(19.0 / 30);
+Button3_y = Button2_y + Button2_h;
+Button3_w = (int)Button2_w / 3;
+Button3_h = Button1_h;
+}
+SDL_Rect Button1Up_rect = { Button1_x, Button1_y, Button1_w, Button1_h };
+SDL_Rect Gun_rect = { Button1_x, Button1_y + Button1_h, Button1_w, Button1_h };
+SDL_Rect Button1Down_rect = { Button1_x, Button1_y + Button1_h * 2, Button1_w, Button1_h };
+
+SDL_Rect Button2Up_rect = { Button2_x, Button2_y, Button2_w, Button2_h };
+SDL_Rect Angle_rect = { Button2_x, Button2_y + Button2_h, Button2_w, Button2_h };
+SDL_Rect Button2Down_rect = { Button2_x, Button2_y + Button2_h * 2, Button2_w, Button2_h };
+
+SDL_Rect Button3Left_rect = { Button3_x, Button3_y, Button3_w, Button3_h };
+SDL_Rect Power_rect = { Button3_x + Button3_w, Button3_y, Button3_w, Button3_h };
+SDL_Rect Button3Right_rect = { Button3_x + Button3_w * 2, Button3_y, Button3_w, Button3_h };
+
+SDL_RenderCopy(renderer, ButtonUp, NULL, &Button1Up_rect);
+SDL_RenderCopy(renderer, textureGunName, NULL, &Gun_rect);
+SDL_RenderCopy(renderer, ButtonDown, NULL, &Button1Down_rect);
+
+SDL_RenderCopy(renderer, ButtonUp, NULL, &Button2Up_rect);
+SDL_RenderCopy(renderer, textureGunAngle, NULL, &Angle_rect);
+SDL_RenderCopy(renderer, ButtonDown, NULL, &Button2Down_rect);
+
+SDL_RenderCopy(renderer, ButtonLeft, NULL, &Button3Left_rect);
+SDL_RenderCopy(renderer, textureGunPuissance, NULL, &Power_rect);
+SDL_RenderCopy(renderer, ButtonRight, NULL, &Button3Right_rect);
+}
+*/
+
+void CreateAndDrawBottomPanels(Scene *scene, TTF_Font *font, Player players[])
 {
 	SDL_Color fg = { 0, 0, 0 };
 	SDL_Color bg = { 0,102,0 };
 
 	//Creating Texture For Bottom Panel's Background
-	SDL_Texture * textureBottomPanelBackground = LoadTexture(renderer, "Sprites/Green_Background_Camouflage_BottomPanel.BMP");
+	SDL_Texture * textureBottomPanelBackground = LoadTexture(scene->renderer, "Sprites/Green_Background_Camouflage_BottomPanel.BMP");
 
-	SDL_Texture * ButtonUp = LoadTexture(renderer, "Sprites/Green_Arrow_Up.BMP");
-	SDL_Texture * ButtonDown = LoadTexture(renderer, "Sprites/Green_Arrow_Down.BMP");
-	SDL_Texture * ButtonLeft = LoadTexture(renderer, "Sprites/Green_Arrow_Left.BMP");
-	SDL_Texture * ButtonRight = LoadTexture(renderer, "Sprites/Green_Arrow_Right.BMP");
-	SDL_Texture * textureEricAndHank = LoadTexture(renderer, "Sprites/EricAndHank.BMP");
+	SDL_Texture * ButtonUp = LoadTexture(scene->renderer, "Sprites/Green_Arrow_Up.BMP");
+	SDL_Texture * ButtonDown = LoadTexture(scene->renderer, "Sprites/Green_Arrow_Down.BMP");
+	SDL_Texture * ButtonLeft = LoadTexture(scene->renderer, "Sprites/Green_Arrow_Left.BMP");
+	SDL_Texture * ButtonRight = LoadTexture(scene->renderer, "Sprites/Green_Arrow_Right.BMP");
+	SDL_Texture * textureEricAndHank = LoadTexture(scene->renderer, "Sprites/EricAndHank.BMP");
 
-	SDL_Texture* textureBottomPanel = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB555, SDL_TEXTUREACCESS_TARGET, SCREEN_WIDTH, SCREEN_HEIGHT);
+	SDL_Texture* textureBottomPanel = SDL_CreateTexture(scene->renderer, SDL_PIXELFORMAT_RGB555, SDL_TEXTUREACCESS_TARGET, SCREEN_WIDTH, SCREEN_HEIGHT);
 
 	SDL_Rect BottomPanel_rect = { 0, (int)(80 * SCREEN_HEIGHT) / 100, SCREEN_WIDTH, (int)(20 * SCREEN_WIDTH) / 100 };
-	SDL_RenderCopy(renderer, textureBottomPanelBackground, NULL, &BottomPanel_rect);
+	SDL_RenderCopy(scene->renderer, textureBottomPanelBackground, NULL, &BottomPanel_rect);
 
 	SDL_Rect EricAndHank_rect = { (int)((40 + 2.5)*SCREEN_WIDTH) / 100, (int)(80 * SCREEN_HEIGHT) / 100, (int)(15 * SCREEN_WIDTH) / 100, (int)(20 * SCREEN_HEIGHT) / 100 };
-	SDL_RenderCopy(renderer, textureEricAndHank, NULL, &EricAndHank_rect);
+	SDL_RenderCopy(scene->renderer, textureEricAndHank, NULL, &EricAndHank_rect);
 
-	SDL_Texture *textureGunName = NULL;
-	SDL_Texture * textureGunPuissance = NULL;
-
+	int Button1_x, Button1_y, Button1_w, Button1_h, Button2_x, Button2_y, Button2_w, Button2_h, Button3_x, Button3_y, Button3_w, Button3_h;
+	const char *textName;
+	std::string textPuissance;
 	for (int i = 0; i <= 1; i++)
 	{
-		// ѕосле выстрела последнего оружи€ headWeapon = NULL, поэтому не получаетс€ получить название оружи€, из-за этого происходит ошибка.
+		if (i == 0)
+		{
+			Button1_x = (int)SCREEN_WIDTH / 30;
+			Button1_y = (int)SCREEN_HEIGHT*(33.0 / 40);
+			Button1_w = Button1_x * 4;
+			Button1_h = (int)SCREEN_HEIGHT / 20.0;
 
+			Button2_x = Button1_x * 6;
+			Button2_y = Button1_y;
+			Button2_w = (int)Button1_w / 2;
+			Button2_h = Button1_h;
+
+			Button3_x = (int)SCREEN_WIDTH*(3.0 / 10);
+			Button3_y = Button2_y + Button2_h;
+			Button3_w = (int)Button2_w / 3;
+			Button3_h = Button1_h;
+		}
+		else {
+			Button1_x = (int)SCREEN_WIDTH*(5.0 / 6);
+			Button1_y = (int)SCREEN_HEIGHT*(33.0 / 40);
+			Button1_w = (int)SCREEN_WIDTH*(2.0 / 15);
+			Button1_h = (int)SCREEN_HEIGHT / 20.0;
+
+			Button2_x = (int)SCREEN_WIDTH*(11.0 / 15);
+			Button2_y = Button1_y;
+			Button2_w = (int)Button1_w / 2;
+			Button2_h = Button1_h;
+
+			Button3_x = (int)SCREEN_WIDTH*(19.0 / 30);
+			Button3_y = Button2_y + Button2_h;
+			Button3_w = (int)Button2_w / 3;
+			Button3_h = Button1_h;
+		}
+		SDL_Rect Button1Up_rect = { Button1_x, Button1_y, Button1_w, Button1_h };
+		SDL_Rect Gun_rect = { Button1_x, Button1_y + Button1_h, Button1_w, Button1_h };
+		SDL_Rect Button1Down_rect = { Button1_x, Button1_y + Button1_h * 2, Button1_w, Button1_h };
+
+		SDL_Rect Button2Up_rect = { Button2_x, Button2_y, Button2_w, Button2_h };
+		SDL_Rect Angle_rect = { Button2_x, Button2_y + Button2_h, Button2_w, Button2_h };
+		SDL_Rect Button2Down_rect = { Button2_x, Button2_y + Button2_h * 2, Button2_w, Button2_h };
+
+		SDL_Rect Button3Left_rect = { Button3_x, Button3_y, Button3_w, Button3_h };
+		SDL_Rect Power_rect = { Button3_x + Button3_w, Button3_y, Button3_w, Button3_h };
+		SDL_Rect Button3Right_rect = { Button3_x + Button3_w * 2, Button3_y, Button3_w, Button3_h };
+
+		// ѕосле выстрела последнего оружи€ headWeapon = NULL, поэтому не получаетс€ получить название оружи€, из-за этого происходит ошибка.
 		//if (players[i].headWeapon != NULL)  //
 		//{
 		//	//Creating Texture For Gun's Name
@@ -2077,40 +2094,44 @@ void CreateAndDrawBottomPanels(SDL_Renderer *renderer, TTF_Font *font, Player pl
 
 		if (players[i].headWeapon != NULL)
 		{
-			//Creating Texture For Gun's Name
-			textureGunName = CreateTextureFromText(renderer, font, players[i].headWeapon->name, fg, bg);
-			//Creating Texture For Gun's Puissance
-			textureGunPuissance = CreateTextureFromNumber(renderer, font, players[i].power, fg, bg); //
+			//Obtaining Gun's Name and Gun's Puissance
+			textName = players[i].headWeapon->name;
+			textPuissance = std::to_string(players[i].power);
 		}
 		else
 		{
-			//Creating Texture For Gun's Name
-			textureGunName = CreateTextureFromText(renderer, font, "Empty", fg, bg);
-			//Creating Texture For Gun's Puissance
-			textureGunPuissance = CreateTextureFromNumber(renderer, font, 0, fg, bg);
+			//Obtaining Gun's Name and Gun's Puissance
+			textName = "Empty";
+			textPuissance = "0";
 		}
+		//Obtaining Gun's Angle
+		std::string textAngle;
+		if (i == 0) textAngle = std::to_string((-1)*players[i].tank.cannon.angle);
+		else textAngle = std::to_string(players[i].tank.cannon.angle);
 
-		//Creating Texture For Gun's Angle
-		SDL_Texture * textureGunAngle = NULL;
-		if (i == 0) textureGunAngle = CreateTextureFromNumber(renderer, font, (-1)*players[i].tank.cannon.angle, fg, bg);
-		else textureGunAngle = CreateTextureFromNumber(renderer, font, players[i].tank.cannon.angle, fg, bg);
+		SDL_RenderCopy(scene->renderer, ButtonUp, NULL, &Button1Up_rect);
+		if (strlen(textName) > 10)Draw_A_text(scene, Gun_rect, textName, fg, bg, "Center", 9);
+		else Draw_A_text(scene, Gun_rect, textName, fg, bg, "Center", 12);
+		SDL_RenderCopy(scene->renderer, ButtonDown, NULL, &Button1Down_rect);
 
-		DrawBottomPanel(renderer, textureBottomPanel, ButtonUp, ButtonDown, ButtonLeft, ButtonRight, textureGunName, textureGunAngle, textureGunPuissance, i);
-		//Destroying Textures
-		SDL_DestroyTexture(textureGunName);
-		SDL_DestroyTexture(textureGunAngle);
-		SDL_DestroyTexture(textureGunPuissance);
+		SDL_RenderCopy(scene->renderer, ButtonUp, NULL, &Button2Up_rect);
+		Draw_A_text(scene, Angle_rect, textAngle.c_str(), fg, bg, "Center", 20);
+		SDL_RenderCopy(scene->renderer, ButtonDown, NULL, &Button2Down_rect);
+
+		SDL_RenderCopy(scene->renderer, ButtonLeft, NULL, &Button3Left_rect);
+		if (textPuissance.length() <= 2) Draw_A_text(scene, Power_rect, textPuissance.c_str(), fg, bg, "Center", 12);
+		else  Draw_A_text(scene, Power_rect, textPuissance.c_str(), fg, bg, "Center", 8);
+		SDL_RenderCopy(scene->renderer, ButtonRight, NULL, &Button3Right_rect);
 	}
-	SDL_SetRenderTarget(renderer, textureBottomPanel);
+	SDL_SetRenderTarget(scene->renderer, textureBottomPanel);
 	SDL_DestroyTexture(ButtonUp);
 	SDL_DestroyTexture(ButtonDown);
 	SDL_DestroyTexture(ButtonLeft);
 	SDL_DestroyTexture(ButtonRight);
 	SDL_DestroyTexture(textureEricAndHank);
 	SDL_DestroyTexture(textureBottomPanelBackground);
-	SDL_SetRenderTarget(renderer, NULL);
-
-	//SDL_DestroyTexture(textureBottomPanel);
+	SDL_SetRenderTarget(scene->renderer, NULL);
+	SDL_DestroyTexture(textureBottomPanel);
 }
 
 void BottomPanelInterations(Player players[], int Mouse_x, int Mouse_y, int PlayerLap, Weapon *activeWeapon)
@@ -2198,4 +2219,74 @@ void BottomPanelInterations(Player players[], int Mouse_x, int Mouse_y, int Play
 	{
 		if (players[PlayerLap - 1].power < 100) players[PlayerLap - 1].power++; //
 	}
+}
+
+void ObtainNameOfWinner(Scene *scene, int i)
+{
+	SDL_Color colorGameBg = { 160, 200, 160, 0 };
+	SDL_Color colorBlack = { 0, 0, 0, };
+	SDL_Color colorGold = { 255, 215, 0 };
+	SDL_Rect Congratulation_rect = { (int)(SCREEN_WIDTH / 2.0) - (int)(SCREEN_WIDTH / 6.0), (int)((17.0 / 60)*SCREEN_HEIGHT * (1.0 / 2)), 3 * (int)(SCREEN_WIDTH / 6.0), (int)(SCREEN_HEIGHT / 12.0) };
+	SDL_Rect BlancForName_rect = { (int)(SCREEN_WIDTH / 2.0), Congratulation_rect.y + Congratulation_rect.h + 100, (int)(SCREEN_WIDTH / 6.0), Congratulation_rect.h };
+	std::string s = ("Player ");
+	s.append(std::to_string(i + 1));
+	s.append(" have Won! ");
+	s.append(" Enter the winner's name: ");
+	Draw_A_text(scene, Congratulation_rect, s.c_str(), colorBlack, colorGameBg, "Center", 12);
+	SDL_RenderPresent(scene->renderer);
+
+	s = "";
+	bool keyIsAlreadyPressed = false;
+	bool quit = false;
+	while (quit == false) {
+		while (SDL_PollEvent(&scene->event)) {
+			if (scene->event.key.keysym.sym == SDLK_RETURN || scene->event.type == SDL_QUIT) {
+				quit = true;
+				break;
+			}
+			if (scene->event.type == SDL_KEYDOWN) {
+				if (s.length() >= 6) {
+					continue;
+				}
+				if (keyIsAlreadyPressed == false && scene->event.key.keysym.scancode >= SDL_SCANCODE_A && scene->event.key.keysym.scancode <= SDL_SCANCODE_0)
+				{
+					const char *c = (SDL_GetKeyName(scene->event.key.keysym.sym));
+					printf_s("%c", c);
+					s.append(c);
+					Draw_A_text(scene, BlancForName_rect, s.c_str(), colorGold, colorGameBg, "Center", 18);
+					SDL_RenderPresent(scene->renderer);
+					keyIsAlreadyPressed = false;
+				}
+			}
+			else if (scene->event.type == SDL_KEYUP) {
+				keyIsAlreadyPressed = false;
+			}
+		}
+	}
+	strcpy_s(scene->WinnerName, s.c_str());
+}
+
+void UpdateAndSaveRecord(Scene *scene, Player players[], int i)
+{
+	RecordRow records[NUMBER_OF_RECORD_ROWS];
+	LoadRecords(records);
+	int recordsIndex = -1;
+	for (int j = 0; j < NUMBER_OF_RECORD_ROWS; j++)
+		if (players[i].score >= records[j].score)
+		{
+			recordsIndex = j;
+			break;
+		}
+
+	if (recordsIndex > -1)
+	{
+		for (int j = NUMBER_OF_RECORD_ROWS - 2; j >= recordsIndex; j--) records[j + 1] = records[j];
+		strcpy_s(records[recordsIndex].name, NAME_LENGTH, scene->WinnerName);
+		records[recordsIndex].score = players[i].score;
+	}
+	FILE *recordsFile = NULL;
+	fopen_s(&recordsFile, "records.pt", "wb");
+	fwrite(records, sizeof(RecordRow), NUMBER_OF_RECORD_ROWS, recordsFile);
+	fclose(recordsFile);
+	recordsFile = NULL;
 }

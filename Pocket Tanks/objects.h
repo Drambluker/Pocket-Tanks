@@ -83,4 +83,5 @@ struct Scene
 	Player players[2];
 	PlayerTopPanel topPanels[2];
 	bool GameOpening, quitSecondScreen, quitThirdScreen;
+	char WinnerName[256];
 };
