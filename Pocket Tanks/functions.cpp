@@ -99,7 +99,7 @@ void LoadScene(Scene *scene)
 		exit(1);
 	}
 
-	scene->soundEffect = Mix_LoadWAV("Samples/MGK_Oh_Shit.wav");
+	scene->hitEffect = Mix_LoadWAV("Samples/MGK_Oh_Shit.wav");
 
 	if (scene->GameOpening == true)
 	{
@@ -208,12 +208,12 @@ void UpdateLogic(Scene *scene)
 	if (scene->activeWeapon != NULL && (int(scene->activeWeapon->rectOfEffect.w + 0.05 * scene->deltaTime) > 2.25 * scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE && HitInTheTank(scene->activeWeapon, scene->players[(scene->playerLap == 2) ? 1 : 0]) || DirectHitInTheTank(scene->activeWeapon, scene->players[(scene->playerLap == 2) ? 1 : 0])))
 	{
 		scene->players[(scene->playerLap == 2) ? 0 : 1].score += scene->activeWeapon->score;
-		Mix_PlayChannel(-1, scene->soundEffect, 0);
+		Mix_PlayChannel(-1, scene->hitEffect, 0);
 	}
 	else if (scene->activeWeapon != NULL && int(scene->activeWeapon->rectOfEffect.w + 0.05 * scene->deltaTime) > 2.25 * scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE && HitInTheTank(scene->activeWeapon, scene->players[(scene->playerLap == 2) ? 0 : 1]))
 	{
 		scene->players[(scene->playerLap == 2) ? 0 : 1].score -= scene->activeWeapon->score;
-		Mix_PlayChannel(-1, scene->soundEffect, 0);
+		Mix_PlayChannel(-1, scene->hitEffect, 0);
 	}
 
 	if (scene->activeWeapon != NULL && (scene->activeWeapon->rect.y >= scene->landscape.points[scene->activeWeapon->rect.x].y ||
@@ -230,7 +230,7 @@ void UpdateLogic(Scene *scene)
 			scene->activeWeapon->rect.y >= SCREEN_HEIGHT))
 		{
 			SDL_Point depthÑoordinate = { scene->activeWeapon->rect.x, scene->activeWeapon->rect.y };
-			scene->activeWeapon->rectOfEffect = { int(depthÑoordinate.x - scene->activeWeapon->rectOfEffect.w / 2), depthÑoordinate.y - scene->activeWeapon->rectOfEffect.h / 2, int(scene->activeWeapon->rectOfEffect.w + 0.05 * scene->deltaTime), int(scene->activeWeapon->rectOfEffect.h + 0.05 * scene->deltaTime) };
+			scene->activeWeapon->rectOfEffect = { int(depthÑoordinate.x - scene->activeWeapon->rectOfEffect.w / 2), depthÑoordinate.y - scene->activeWeapon->rectOfEffect.h / 2, int(scene->activeWeapon->rectOfEffect.w + 0.2 * scene->deltaTime), int(scene->activeWeapon->rectOfEffect.h + 0.2 * scene->deltaTime) };
 
 			if (scene->activeWeapon->rectOfEffect.w > 2.25 * scene->activeWeapon->score * SIZE_OF_LANDSCAPE_DAMAGE || strcmp(scene->activeWeapon->name, "Laser") == 0)
 			{
@@ -352,8 +352,8 @@ void DestroyScene(Scene *scene)
 
 	DestroyTextures(scene->players, scene->activeWeapon);
 
-	Mix_FreeChunk(scene->soundEffect);
-	scene->soundEffect = NULL;
+	Mix_FreeChunk(scene->hitEffect);
+	scene->hitEffect = NULL;
 	Mix_Quit();
 
 	SDL_DestroyRenderer(scene->renderer);

@@ -75,7 +75,7 @@ struct Scene
 	SDL_Event event;
 	INT8 playerLap;
 	Weapon *activeWeapon;
-	Mix_Chunk *soundEffect;
+	Mix_Chunk *hitEffect;
 	double oldTime, newTime, deltaTime, PCFreq;
 	LONGLONG timeStart;
 	int landscapeType;
