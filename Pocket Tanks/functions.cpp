@@ -515,7 +515,6 @@ void InitPlayers(Player players[])
 		players[i].power = 50;
 		players[i].tank.body.texture = NULL;
 		players[i].tank.cannon.texture = NULL;
-		//players[i].tank.cannon.angle = 0;
 		players[i].tank.angle = 0;
 
 		for (int j = 0; j < NUMBER_OF_WEAPON; j++)
@@ -538,89 +537,34 @@ void InitPlayers(Player players[])
 
 void DrawTanks(SDL_Renderer *renderer, Player players[])
 {
-	// Player 1
-	/*double r = sqrt((players[0].tank.body.rect.x - (players[0].tank.body.rect.x + players[0].tank.body.rect.w / 2)) * (players[0].tank.body.rect.x - (players[0].tank.body.rect.x + players[0].tank.body.rect.w / 2)) +
-		(players[0].tank.body.rect.y + players[0].tank.body.rect.h - (players[0].tank.body.rect.y + players[0].tank.body.rect.h / 2)) * (players[0].tank.body.rect.y + players[0].tank.body.rect.h - (players[0].tank.body.rect.y + players[0].tank.body.rect.h / 2)));*/
-	double r = sqrt(players[0].tank.body.rect.w * players[0].tank.body.rect.w / 4 + 2 * players[0].tank.body.rect.h * players[0].tank.body.rect.h / 3);
+	double r;
+	SDL_Point pointOfRotation;
 
-	//players[0].tank.cannon.rect = { players[0].tank.body.rect.x + (int)(r * cos(2 * Pi - players[0].tank.angle * Pi / 180)),
-	//	players[0].tank.body.rect.y + 130 * players[0].tank.body.rect.h / BODY_H - (int)(r * sin(2 * Pi - players[0].tank.angle * Pi / 180)),
-	//	CANNON_W * players[0].tank.body.rect.w / BODY_W,
-	//	CANNON_H * players[0].tank.body.rect.h / BODY_H };
-	players[0].tank.cannon.rect = { int(players[0].tank.body.rect.x + r * cos(-atan((double)players[0].tank.body.rect.h / players[0].tank.body.rect.w) + Pi * players[0].tank.angle / 180)),
-		int(players[0].tank.body.rect.y + players[0].tank.body.rect.h + r * sin(-atan((double)players[0].tank.body.rect.h / players[0].tank.body.rect.w) + Pi * players[0].tank.angle / 180)),
-		CANNON_W * players[0].tank.body.rect.w / BODY_W,
-		CANNON_H * players[0].tank.body.rect.h / BODY_H };
-
-	SDL_Point pointOfRotation = { 0, players[0].tank.cannon.rect.h / 2 };
-	SDL_RenderCopyEx(renderer, players[0].tank.cannon.texture, NULL, &players[0].tank.cannon.rect,
-		players[0].tank.cannon.angle, &pointOfRotation, SDL_FLIP_NONE);
-
-	// (375; 130)
-	//players[0].tank.cannon.rect = { players[0].tank.body.rect.x + 325 * players[0].tank.body.rect.w / BODY_W,
-	//	players[0].tank.body.rect.y + 130 * players[0].tank.body.rect.h / BODY_H,
-	//	CANNON_W * players[0].tank.body.rect.w / BODY_W,
-	//	CANNON_H * players[0].tank.body.rect.h / BODY_H };
-	//pointOfRotation = { -5 - (BODY_W - CANNON_W) * players[0].tank.body.rect.w / BODY_W,
-	//5 + (BODY_H - 130) * players[0].tank.body.rect.h / BODY_H };
-
-	if (players[0].headWeapon != NULL)
+	for (int i = 0; i < 2; i++)
 	{
-		players[0].headWeapon->rect = { -2 + players[0].tank.cannon.rect.x + (int)(players[0].tank.cannon.rect.w * cos(-players[0].tank.cannon.angle * Pi / 180)),
-			-2 + players[0].tank.cannon.rect.y - (int)(players[0].tank.cannon.rect.w * sin(-players[0].tank.cannon.angle * Pi / 180)),
-			7, 7 };
-		players[0].headWeapon->angle = players[0].tank.cannon.angle * Pi / 180;
+		r = sqrt(players[i].tank.body.rect.w * players[i].tank.body.rect.w / 4 + players[i].tank.body.rect.h * players[i].tank.body.rect.h / CANNON_Y_POSITION_COEF);
+
+		players[i].tank.cannon.rect = { int(players[i].tank.body.rect.x + r * cos(-atan((double)players[i].tank.body.rect.h / sqrt(CANNON_Y_POSITION_COEF) / (players[i].tank.body.rect.w / 2)) + Pi * players[i].tank.angle / 180)),
+			int(players[i].tank.body.rect.y + players[i].tank.body.rect.h + r * sin(-atan((double)players[i].tank.body.rect.h / sqrt(CANNON_Y_POSITION_COEF) / (players[i].tank.body.rect.w / 2)) + Pi * players[i].tank.angle / 180)),
+			CANNON_W * players[i].tank.body.rect.w / BODY_W + 2,
+			CANNON_H * players[i].tank.body.rect.h / BODY_H };
+
+		pointOfRotation = { 0, players[i].tank.cannon.rect.h / 2 };
+		SDL_RenderCopyEx(renderer, players[i].tank.cannon.texture, NULL, &players[i].tank.cannon.rect,
+			players[i].tank.cannon.angle, &pointOfRotation, SDL_FLIP_NONE);
+
+		if (players[i].headWeapon != NULL)
+		{
+			players[i].headWeapon->rect = { -2 + players[i].tank.cannon.rect.x + (int)(players[i].tank.cannon.rect.w * cos(-players[i].tank.cannon.angle * Pi / 180)),
+				-2 + players[i].tank.cannon.rect.y - (int)(players[i].tank.cannon.rect.w * sin(-players[i].tank.cannon.angle * Pi / 180)),
+				7, 7 };
+			players[i].headWeapon->angle = players[i].tank.cannon.angle * Pi / 180;
+		}
+
+		pointOfRotation = { 0, players[i].tank.body.rect.h };
+		SDL_RenderCopyEx(renderer, players[i].tank.body.texture, NULL, &players[i].tank.body.rect,
+			players[i].tank.angle, &pointOfRotation, SDL_FLIP_NONE);
 	}
-
-	pointOfRotation = { 0, players[0].tank.body.rect.h };
-	SDL_RenderCopyEx(renderer, players[0].tank.body.texture, NULL, &players[0].tank.body.rect,
-		players[0].tank.angle, &pointOfRotation, SDL_FLIP_NONE);
-
-	// Player 2
-	//r = sqrt((players[1].tank.body.rect.x - (players[1].tank.body.rect.x + players[1].tank.body.rect.w / 2)) * (players[1].tank.body.rect.x - (players[1].tank.body.rect.x + players[1].tank.body.rect.w / 2)) +
-	//	(players[1].tank.body.rect.y + players[1].tank.body.rect.h - (players[1].tank.body.rect.y + players[1].tank.body.rect.h / 2)) * (players[1].tank.body.rect.y + players[1].tank.body.rect.h - (players[1].tank.body.rect.y + players[1].tank.body.rect.h / 2)));
-	r = sqrt(players[1].tank.body.rect.w * players[1].tank.body.rect.w / 4 + 2 * players[1].tank.body.rect.h * players[1].tank.body.rect.h / 3);
-
-	//players[1].tank.cannon.rect = { players[1].tank.body.rect.x + (BODY_W - CANNON_W) * players[1].tank.body.rect.w / BODY_W - (int)(r * cos(2 * Pi - players[1].tank.angle * Pi / 180)),
-	//	players[1].tank.body.rect.y + 130 * players[0].tank.body.rect.h / BODY_H - (int)(r * sin(2 * Pi - players[1].tank.angle * Pi / 180)),
-	//	CANNON_W * players[1].tank.body.rect.w / BODY_W,
-	//	CANNON_H * players[1].tank.body.rect.h / BODY_H };
-
-	players[1].tank.cannon.rect = { int(players[1].tank.body.rect.x + r * cos(-atan((double)players[1].tank.body.rect.h / players[1].tank.body.rect.w) + Pi * players[1].tank.angle / 180)),
-		int(players[1].tank.body.rect.y + players[1].tank.body.rect.h + r * sin(-atan((double)players[1].tank.body.rect.h / players[1].tank.body.rect.w) + Pi * players[1].tank.angle / 180)),
-		CANNON_W * players[1].tank.body.rect.w / BODY_W,
-		CANNON_H * players[1].tank.body.rect.h / BODY_H };
-
-	/*pointOfRotation = { players[1].tank.cannon.rect.w, players[1].tank.cannon.rect.h / 2 };*/
-	pointOfRotation = { 0, players[0].tank.cannon.rect.h / 2 };
-	SDL_RenderCopyEx(renderer, players[1].tank.cannon.texture, NULL, &players[1].tank.cannon.rect,
-		players[1].tank.cannon.angle, &pointOfRotation, SDL_FLIP_NONE);
-
-	//players[1].tank.cannon.rect = { players[1].tank.body.rect.x + (BODY_W - 325 - CANNON_W) * players[0].tank.body.rect.w / BODY_W,
-	//	players[1].tank.body.rect.y + 130 * players[0].tank.body.rect.h / BODY_H,
-	//	players[0].tank.cannon.rect.w, players[0].tank.cannon.rect.h };
-	//pointOfRotation = { -5 - (BODY_W - 375 - CANNON_W) * players[1].tank.body.rect.w / BODY_W,
-	//	5 + (BODY_H - 130) * players[1].tank.body.rect.h / BODY_H };
-
-	//if (players[1].headWeapon != NULL)
-	//{
-	//	players[1].headWeapon->rect = { -2 + players[1].tank.cannon.rect.x + players[1].tank.cannon.rect.w - (int)(players[1].tank.cannon.rect.w * cos(2 * Pi - players[1].tank.cannon.angle * Pi / 180)),
-	//		-2 + players[1].tank.cannon.rect.y - (int)(players[1].tank.cannon.rect.w * sin(players[1].tank.cannon.angle * Pi / 180)),
-	//		7, 7 };
-	//	players[1].headWeapon->angle = Pi + players[1].tank.cannon.angle * Pi / 180;
-	//}
-
-	if (players[1].headWeapon != NULL)
-	{
-		players[1].headWeapon->rect = { -2 + players[1].tank.cannon.rect.x + (int)(players[1].tank.cannon.rect.w * cos(-players[1].tank.cannon.angle * Pi / 180)),
-			-2 + players[1].tank.cannon.rect.y - (int)(players[1].tank.cannon.rect.w * sin(-players[1].tank.cannon.angle * Pi / 180)),
-			7, 7 };
-		players[1].headWeapon->angle = players[1].tank.cannon.angle * Pi / 180;
-	}
-
-	pointOfRotation = { 0, players[1].tank.body.rect.h };
-	SDL_RenderCopyEx(renderer, players[1].tank.body.texture, NULL, &players[1].tank.body.rect,
-		players[1].tank.angle, &pointOfRotation, SDL_FLIP_NONE);
 }
 
 SDL_Texture * LoadTexture(SDL_Renderer *renderer, const char *file)
