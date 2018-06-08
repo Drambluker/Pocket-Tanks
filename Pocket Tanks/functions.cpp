@@ -637,9 +637,9 @@ void RenderWeapon(SDL_Renderer *renderer, Weapon *activeWeapon)
 	{
 		if (strcmp(activeWeapon->name, "Laser") == 0)
 		{
-			SDL_Point pointOfRotation = { 0, 0 };
-			activeWeapon->rect.h = 7;
+			activeWeapon->rect.h = 6;
 			activeWeapon->rect.w = 7 * activeWeapon->rect.h;
+			SDL_Point pointOfRotation = { 0, activeWeapon->rect.h / 2 };
 			SDL_RenderCopyEx(renderer, activeWeapon->texture, NULL, &activeWeapon->rect, activeWeapon->angle * 180 / Pi, &pointOfRotation, SDL_FLIP_NONE);
 			return;
 		}
