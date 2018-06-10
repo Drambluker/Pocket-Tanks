@@ -604,6 +604,8 @@ void DestroyTextures(Player players[], Weapon *activeWeapon)
 	{
 		SDL_DestroyTexture(activeWeapon->texture);
 		activeWeapon->texture = NULL;
+		SDL_DestroyTexture(activeWeapon->effect);
+		activeWeapon->effect = NULL;
 		free(activeWeapon);
 		activeWeapon = NULL;
 	}
