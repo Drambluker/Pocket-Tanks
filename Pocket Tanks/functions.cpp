@@ -692,6 +692,7 @@ Weapon * PopWeapon(Weapon **headWeapons, Weapon **tailWeapons)
 			*headWeapons = (*headWeapons)->prev;
 
 			if (*headWeapons != NULL) (*headWeapons)->next = tempWeapon->next;
+			else *tailWeapons = NULL;
 		}
 
 		return weapon;
