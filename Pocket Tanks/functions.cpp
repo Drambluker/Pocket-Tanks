@@ -127,7 +127,7 @@ bool ProcessEvents(Scene *scene)
 	double newAngle;
 
 	while (SDL_PollEvent(&scene->event)) {
-		if (scene->event.type == SDL_QUIT)
+		if (scene->event.type == SDL_QUIT || scene->players[0].headWeapon == NULL && scene->players[1].headWeapon == NULL && scene->activeWeapon == NULL)
 			return true;
 
 		if (scene->event.type == SDL_MOUSEBUTTONDOWN && scene->event.button.button == SDL_BUTTON_LEFT)
@@ -172,9 +172,6 @@ bool ProcessEvents(Scene *scene)
 		if (scene->event.type == SDL_KEYDOWN && scene->event.key.keysym.sym == SDLK_SPACE && scene->activeWeapon == NULL)
 		{
 			scene->activeWeapon = PopWeapon(&scene->players[scene->playerLap - 1].headWeapon);
-
-			if (scene->activeWeapon == NULL && scene->playerLap == 2)
-				return true;
 
 			if (scene->playerLap == 1) scene->playerLap = 2;
 			else scene->playerLap = 1;
@@ -269,6 +266,8 @@ void UpdateLogic(Scene *scene)
 
 				SDL_DestroyTexture(scene->activeWeapon->texture);
 				scene->activeWeapon->texture = NULL;
+				SDL_DestroyTexture(scene->activeWeapon->effect);
+				scene->activeWeapon->effect = NULL;
 				free(scene->activeWeapon);
 				scene->activeWeapon = NULL;
 			}
@@ -277,6 +276,8 @@ void UpdateLogic(Scene *scene)
 		{
 			SDL_DestroyTexture(scene->activeWeapon->texture);
 			scene->activeWeapon->texture = NULL;
+			SDL_DestroyTexture(scene->activeWeapon->effect);
+			scene->activeWeapon->effect = NULL;
 			free(scene->activeWeapon);
 			scene->activeWeapon = NULL;
 		}
@@ -347,6 +348,8 @@ void DestroyScene(Scene *scene)
 		if (strlen(scene->WinnerName) > 0) UpdateAndSaveRecord(scene, scene->players, i);
 	}
 
+	DestroyTextures(scene->players, scene->activeWeapon);
+
 	Weapon *tempWeapon = NULL;
 
 	for (int i = 0; i < 2; i++)
@@ -360,8 +363,6 @@ void DestroyScene(Scene *scene)
 			tempWeapon = PopWeapon(&scene->players[i].headWeapon);
 		}
 	}
-
-	DestroyTextures(scene->players, scene->activeWeapon);
 
 	Mix_FreeChunk(scene->hitEffect);
 	scene->hitEffect = NULL;
@@ -1382,7 +1383,6 @@ void CreateAndDraw2PlayersMenu(Scene *scene)
 					&& (scene->event.button.y >= Landscape1_rect.y) && (scene->event.button.y <= Landscape1_rect.y + Landscape1_rect.h))
 				{
 					scene->landscapeType = 1;
-					InitLandscape(&scene->landscape, &scene->defaultLandscape, scene->landscapeType);
 					LandscapeChoosed = true;
 					break;
 				}
@@ -1392,7 +1392,6 @@ void CreateAndDraw2PlayersMenu(Scene *scene)
 						&& (scene->event.button.y >= Landscape2_rect.y) && (scene->event.button.y <= Landscape2_rect.y + Landscape2_rect.h))
 					{
 						scene->landscapeType = 2;
-						InitLandscape(&scene->landscape, &scene->defaultLandscape, scene->landscapeType);
 						LandscapeChoosed = true;
 						break;
 					}
@@ -1400,7 +1399,6 @@ void CreateAndDraw2PlayersMenu(Scene *scene)
 						&& (scene->event.button.y >= Landscape3_rect.y) && (scene->event.button.y <= Landscape3_rect.y + Landscape3_rect.h))
 					{
 						scene->landscapeType = 3;
-						InitLandscape(&scene->landscape, &scene->defaultLandscape, scene->landscapeType);
 						LandscapeChoosed = true;
 						break;
 					}
@@ -1408,7 +1406,6 @@ void CreateAndDraw2PlayersMenu(Scene *scene)
 						&& (scene->event.button.y >= Landscape4_rect.y) && (scene->event.button.y <= Landscape4_rect.y + Landscape4_rect.h))
 					{
 						scene->landscapeType = 4;
-						InitLandscape(&scene->landscape, &scene->defaultLandscape, scene->landscapeType);
 						LandscapeChoosed = true;
 						break;
 					}
