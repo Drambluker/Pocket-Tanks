@@ -160,7 +160,6 @@
     <Image Include="Sprites\body1.bmp" />
     <Image Include="Sprites\body2.bmp" />
     <Image Include="Sprites\cannon1.bmp" />
-    <Image Include="Sprites\cannon2.bmp" />
     <Image Include="Sprites\weapon1.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

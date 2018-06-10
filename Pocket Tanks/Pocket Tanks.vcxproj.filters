@@ -55,9 +55,6 @@
     <Image Include="Sprites\cannon1.bmp">
       <Filter>Resource Files\Sprites</Filter>
     </Image>
-    <Image Include="Sprites\cannon2.bmp">
-      <Filter>Resource Files\Sprites</Filter>
-    </Image>
     <Image Include="Sprites\weapon1.bmp">
       <Filter>Resource Files\Sprites</Filter>
     </Image>
