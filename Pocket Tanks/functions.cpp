@@ -171,7 +171,7 @@ bool ProcessEvents(Scene *scene)
 
 		if (scene->event.type == SDL_KEYDOWN && scene->event.key.keysym.sym == SDLK_SPACE && scene->activeWeapon == NULL)
 		{
-			scene->activeWeapon = PopWeapon(&scene->players[scene->playerLap - 1].headWeapon);
+			scene->activeWeapon = PopWeapon(&scene->players[scene->playerLap - 1].headWeapon, &scene->players[scene->playerLap - 1].tailWeapon);
 
 			if (scene->playerLap == 1) scene->playerLap = 2;
 			else scene->playerLap = 1;
@@ -520,7 +520,7 @@ void InitPlayers(Player players[])
 
 		for (int j = 0; j < NUMBER_OF_WEAPON; j++)
 		{
-			weapon = PopWeapon(&players[i].headWeapon);
+			weapon = PopWeapon(&players[i].headWeapon, &players[i].tailWeapon);
 			weapon->rectOfEffect.w = weapon->rectOfEffect.h = 0;
 			PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
 		}
@@ -590,7 +590,7 @@ void LoadTextures(SDL_Renderer *renderer, Player players[])
 	{
 		for (int j = 0; j < NUMBER_OF_WEAPON; j++)
 		{
-			weapon = PopWeapon(&players[i].headWeapon);
+			weapon = PopWeapon(&players[i].headWeapon, &players[i].tailWeapon);
 			//weapon->texture = LoadTexture(renderer, "Sprites/weapon1.bmp");
 			weapon->effect = LoadTexture(renderer, "Sprites/bang.bmp");
 			PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
@@ -614,7 +614,7 @@ void DestroyGameObjects(Player players[], Weapon *activeWeapon)
 
 	for (int i = 0; i < 2; i++)
 	{
-		weapon = PopWeapon(&players[i].headWeapon);
+		weapon = PopWeapon(&players[i].headWeapon, &players[i].tailWeapon);
 
 		while (weapon != NULL)
 		{
@@ -624,7 +624,7 @@ void DestroyGameObjects(Player players[], Weapon *activeWeapon)
 			weapon->effect = NULL;
 			free(weapon);
 			weapon = NULL;
-			weapon = PopWeapon(&players[i].headWeapon);
+			weapon = PopWeapon(&players[i].headWeapon, &players[i].tailWeapon);
 		}
 
 		SDL_DestroyTexture(players[i].tank.cannon.texture);
@@ -670,7 +670,7 @@ void PushWeapon(Weapon *weapon, Weapon **headWeapons, Weapon **tailWeapons)
 	*tailWeapons = weapon;
 }
 
-Weapon * PopWeapon(Weapon **headWeapons)
+Weapon * PopWeapon(Weapon **headWeapons, Weapon **tailWeapons)
 {
 	Weapon *tempWeapon = NULL;
 

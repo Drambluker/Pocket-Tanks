@@ -35,7 +35,7 @@ void LoadTextures(SDL_Renderer *renderer, Player[]);
 void DestroyGameObjects(Player[], Weapon *);
 
 void PushWeapon(Weapon *, Weapon **, Weapon **);
-Weapon * PopWeapon(Weapon **);
+Weapon * PopWeapon(Weapon **, Weapon **);
 void SetHeadOnNext(Weapon **);
 void SetHeadOnPrev(Weapon **);
 
