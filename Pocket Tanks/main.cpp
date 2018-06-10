@@ -3,7 +3,7 @@
 int main(int argc, char** argv)
 {
 	Scene scene;
-	LoadScene(&scene);
+	LoadGame(&scene);
 
 	bool quit = false;
 
@@ -18,7 +18,7 @@ int main(int argc, char** argv)
 		DoRender(&scene);
 	}
 
-	DestroyScene(&scene);
+	DestroyGame(&scene);
 
 	return 0;
 }

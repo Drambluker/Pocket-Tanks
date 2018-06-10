@@ -16,12 +16,15 @@ double GetCounter(ULONGLONG, double);
 double FRand(double, double);
 double InterpolateLagrangePolynomial(double, double[], double[], int);
 void LoadScene(Scene *);
+void LoadGame(Scene *);
 bool ProcessEvents(Scene *);
 void UpdateLogic(Scene *);
 bool DirectHitInTheTank(Weapon *, Player);
 bool HitInTheTank(Weapon *, Player);
 void DoRender(Scene *);
+void UpdateRecords(Scene *);
 void DestroyScene(Scene *);
+void DestroyGame(Scene *);
 void LoadRecords(RecordRow[NUMBER_OF_RECORD_ROWS]);
 void InitLandscape(Landscape *, Landscape *, int);
 void Gravitate(Player[], Landscape);
@@ -32,7 +35,6 @@ void RenderWeapon(SDL_Renderer *renderer, Weapon *);
 
 SDL_Texture * LoadTexture(SDL_Renderer *renderer, const char *file);
 void LoadTextures(SDL_Renderer *renderer, Player[]);
-void DestroyGameObjects(Player[], Weapon *);
 
 void PushWeapon(Weapon *, Weapon **, Weapon **);
 Weapon * PopWeapon(Weapon **, Weapon **);

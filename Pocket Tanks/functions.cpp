@@ -46,7 +46,21 @@ double InterpolateLagrangePolynomial(double x, double xValues[], double yValues[
 
 void LoadScene(Scene *scene)
 {
+	InitLandscape(&scene->landscape, &scene->defaultLandscape, scene->landscapeType);
+	InitPlayers(scene->players);
+	InitTopPanels(scene->topPanels);
+
+	LoadTextures(scene->renderer, scene->players);
+
+	scene->activeWeapon = NULL;
+	scene->playerLap = 1;
+	scene->hitEffect = Mix_LoadWAV("Samples/MGK_Oh_Shit.wav");
+}
+
+void LoadGame(Scene *scene)
+{
 	scene->GameOpening = true;
+	
 	if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
 	{
 		printf_s("SDL_Error: %s\n", SDL_GetError());
@@ -99,22 +113,14 @@ void LoadScene(Scene *scene)
 		exit(1);
 	}
 
-	scene->hitEffect = Mix_LoadWAV("Samples/MGK_Oh_Shit.wav");
-
 	if (scene->GameOpening == true)
 	{
 		CreateAndDrawStartMenu(scene);
 		scene->GameOpening = false;
 	}
 
-	InitLandscape(&scene->landscape, &scene->defaultLandscape, scene->landscapeType);
-	InitPlayers(scene->players);
-	InitTopPanels(scene->topPanels);
+	LoadScene(scene);
 
-	LoadTextures(scene->renderer, scene->players);
-
-	scene->playerLap = 1;
-	scene->activeWeapon = NULL;
 	scene->oldTime = scene->newTime = scene->deltaTime = 0;
 	scene->timeStart = StartCounter(&scene->PCFreq);
 }
@@ -333,7 +339,7 @@ void DoRender(Scene *scene)
 	SDL_RenderPresent(scene->renderer);
 }
 
-void DestroyScene(Scene *scene)
+void UpdateRecords(Scene *scene)
 {
 	int i = -1;
 
@@ -347,8 +353,51 @@ void DestroyScene(Scene *scene)
 		ObtainNameOfWinner(scene, i);
 		if (strlen(scene->WinnerName) > 0) UpdateAndSaveRecord(scene, scene->players, i);
 	}
+}
 
-	DestroyGameObjects(scene->players, scene->activeWeapon);
+void DestroyScene(Scene *scene)
+{
+	if (scene->activeWeapon != NULL)
+	{
+		SDL_DestroyTexture(scene->activeWeapon->texture);
+		scene->activeWeapon->texture = NULL;
+		SDL_DestroyTexture(scene->activeWeapon->effect);
+		scene->activeWeapon->effect = NULL;
+		free(scene->activeWeapon);
+		scene->activeWeapon = NULL;
+	}
+
+	Weapon *weapon = NULL;
+
+	for (int i = 0; i < 2; i++)
+	{
+		weapon = PopWeapon(&scene->players[i].headWeapon, &scene->players[i].tailWeapon);
+
+		while (weapon != NULL)
+		{
+			SDL_DestroyTexture(weapon->texture);
+			weapon->texture = NULL;
+			SDL_DestroyTexture(weapon->effect);
+			weapon->effect = NULL;
+			free(weapon);
+			weapon = NULL;
+			weapon = PopWeapon(&scene->players[i].headWeapon, &scene->players[i].tailWeapon);
+		}
+
+		SDL_DestroyTexture(scene->players[i].tank.cannon.texture);
+		scene->players[i].tank.cannon.texture = NULL;
+		SDL_DestroyTexture(scene->players[i].tank.body.texture);
+		scene->players[i].tank.body.texture = NULL;
+	}
+
+	Mix_FreeChunk(scene->hitEffect);
+	scene->hitEffect = NULL;
+}
+
+void DestroyGame(Scene *scene)
+{
+	UpdateRecords(scene);
+	DestroyScene(scene);
 
 	//Weapon *tempWeapon = NULL;
 
@@ -364,10 +413,7 @@ void DestroyScene(Scene *scene)
 	//	}
 	//}
 
-	Mix_FreeChunk(scene->hitEffect);
-	scene->hitEffect = NULL;
 	Mix_Quit();
-
 	SDL_DestroyRenderer(scene->renderer);
 	SDL_DestroyWindow(scene->window);
 	TTF_CloseFont(scene->font);
@@ -442,7 +488,6 @@ void InitLandscape(Landscape *landscape, Landscape *defaultLandscape, int type)
 			landscape->points[i].y = defaultLandscape->points[i].y = SCREEN_HEIGHT / 2;
 			break;
 		}
-
 	}
 }
 
@@ -595,42 +640,6 @@ void LoadTextures(SDL_Renderer *renderer, Player players[])
 			weapon->effect = LoadTexture(renderer, "Sprites/bang.bmp");
 			PushWeapon(weapon, &players[i].headWeapon, &players[i].tailWeapon);
 		}
-	}
-}
-
-void DestroyGameObjects(Player players[], Weapon *activeWeapon)
-{
-	if (activeWeapon != NULL)
-	{
-		SDL_DestroyTexture(activeWeapon->texture);
-		activeWeapon->texture = NULL;
-		SDL_DestroyTexture(activeWeapon->effect);
-		activeWeapon->effect = NULL;
-		free(activeWeapon);
-		activeWeapon = NULL;
-	}
-
-	Weapon *weapon = NULL;
-
-	for (int i = 0; i < 2; i++)
-	{
-		weapon = PopWeapon(&players[i].headWeapon, &players[i].tailWeapon);
-
-		while (weapon != NULL)
-		{
-			SDL_DestroyTexture(weapon->texture);
-			weapon->texture = NULL;
-			SDL_DestroyTexture(weapon->effect);
-			weapon->effect = NULL;
-			free(weapon);
-			weapon = NULL;
-			weapon = PopWeapon(&players[i].headWeapon, &players[i].tailWeapon);
-		}
-
-		SDL_DestroyTexture(players[i].tank.cannon.texture);
-		players[i].tank.cannon.texture = NULL;
-		SDL_DestroyTexture(players[i].tank.body.texture);
-		players[i].tank.body.texture = NULL;
 	}
 }
 
