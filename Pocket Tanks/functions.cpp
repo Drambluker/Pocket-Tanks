@@ -348,21 +348,21 @@ void DestroyScene(Scene *scene)
 		if (strlen(scene->WinnerName) > 0) UpdateAndSaveRecord(scene, scene->players, i);
 	}
 
-	DestroyTextures(scene->players, scene->activeWeapon);
+	DestroyGameObjects(scene->players, scene->activeWeapon);
 
-	Weapon *tempWeapon = NULL;
+	//Weapon *tempWeapon = NULL;
 
-	for (int i = 0; i < 2; i++)
-	{
-		tempWeapon = PopWeapon(&scene->players[i].headWeapon);
+	//for (int i = 0; i < 2; i++)
+	//{
+	//	tempWeapon = PopWeapon(&scene->players[i].headWeapon);
 
-		while (tempWeapon != NULL)
-		{
-			free(tempWeapon);
-			tempWeapon = NULL;
-			tempWeapon = PopWeapon(&scene->players[i].headWeapon);
-		}
-	}
+	//	while (tempWeapon != NULL)
+	//	{
+	//		free(tempWeapon);
+	//		tempWeapon = NULL;
+	//		tempWeapon = PopWeapon(&scene->players[i].headWeapon);
+	//	}
+	//}
 
 	Mix_FreeChunk(scene->hitEffect);
 	scene->hitEffect = NULL;
@@ -598,7 +598,7 @@ void LoadTextures(SDL_Renderer *renderer, Player players[])
 	}
 }
 
-void DestroyTextures(Player players[], Weapon *activeWeapon)
+void DestroyGameObjects(Player players[], Weapon *activeWeapon)
 {
 	if (activeWeapon != NULL)
 	{
@@ -612,7 +612,7 @@ void DestroyTextures(Player players[], Weapon *activeWeapon)
 
 	Weapon *weapon = NULL;
 
-	for (int i = 1; i >= 0; i--)
+	for (int i = 0; i < 2; i++)
 	{
 		weapon = PopWeapon(&players[i].headWeapon);
 

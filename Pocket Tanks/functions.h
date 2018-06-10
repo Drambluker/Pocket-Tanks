@@ -32,7 +32,7 @@ void RenderWeapon(SDL_Renderer *renderer, Weapon *);
 
 SDL_Texture * LoadTexture(SDL_Renderer *renderer, const char *file);
 void LoadTextures(SDL_Renderer *renderer, Player[]);
-void DestroyTextures(Player[], Weapon *);
+void DestroyGameObjects(Player[], Weapon *);
 
 void PushWeapon(Weapon *, Weapon **, Weapon **);
 Weapon * PopWeapon(Weapon **);
