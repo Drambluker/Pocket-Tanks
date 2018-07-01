@@ -43,25 +43,22 @@ void SetHeadOnPrev(Weapon **);
 
 // Hank
 void Draw_A_text(Scene *, SDL_Rect, const char *, SDL_Color, SDL_Color, char *, int);
-void ShowCursor();
-void HideCursor();
-void DrawWeaponInsidePanel(Scene *, const char *, int);
-void InitTopPanels(PlayerTopPanel[]);
-void DrawTopPanels(SDL_Renderer *, PlayerTopPanel[], SDL_Texture *, SDL_Texture *, SDL_Texture *, int);
-void CreateAndDrawTopPanels(SDL_Renderer *, TTF_Font *, Player[], PlayerTopPanel[]);
-
-void CreateAndDrawBottomPanels(Scene *, TTF_Font *, Player[]);
-//void DrawBottomPanel(SDL_Renderer *, SDL_Texture *, SDL_Texture *, SDL_Texture *, SDL_Texture *, SDL_Texture *, SDL_Texture *, SDL_Texture *, SDL_Texture *, int);
 SDL_Texture * CreateTextureFromNumber(SDL_Renderer *, TTF_Font *, int, SDL_Color, SDL_Color);
 SDL_Texture * CreateTextureFromText(SDL_Renderer *, TTF_Font *, const char *, SDL_Color, SDL_Color);
-void BottomPanelInterations(Player[], int, int, int, Weapon *);
 
-//void DrawMsgOnBottonScreen(Scene *, const char *);
-void Draw_ALL_BestScoreLines(Scene *, RecordRow[NUMBER_OF_RECORD_ROWS], SDL_Texture *);
-void DrawBestScoresPanel(Scene *);
-bool CreateAndDrawStartMenu(Scene *);
-int ExitWhileInMenu(Scene *);
+void DrawOpeningScreenOfGame(Scene *);
+bool DrawScreenChoose_Nbr_Players(Scene *);
 void SecondMenuScreenInterations(Scene *, SDL_Rect, SDL_Rect, SDL_Rect);
 void CreateAndDraw2PlayersMenu(Scene *);
+void DrawBestScoresPanel(Scene *);
+void Draw_ALL_BestScoreLines(Scene *, RecordRow[NUMBER_OF_RECORD_ROWS], SDL_Texture *);
+void DrawWeaponInsidePanel(Scene *, const char *, int);
+int ExitWhileInMenu(Scene *);
+
+void InitTopPanels(Scene *);
+void DrawTopPanels(Scene *);
+void CreateAndDrawBottomPanels(Scene *, TTF_Font *, Player[]);
+void BottomPanelInterations(Player[], int, int, int, Weapon *);
+
 void ObtainNameOfWinner(Scene *, int);
 void UpdateAndSaveRecord(Scene *, Player[], int);

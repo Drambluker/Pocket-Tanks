@@ -48,10 +48,13 @@ struct Player
 {
 	char name[NAME_LENGTH];
 	int score;
+	int scoreTemp;
 	int power;
 	Tank tank;
 	Weapon *headWeapon, *tailWeapon;
 	int NbrWeapons;
+	SDL_Texture *textureNamePlayer;
+	SDL_Texture *textureScorePlayer;
 };
 
 struct Landscape
@@ -78,10 +81,12 @@ struct Scene
 	Mix_Chunk *hitEffect;
 	double oldTime, newTime, deltaTime, PCFreq;
 	LONGLONG timeStart;
+	Mix_Music *musique;
 	int landscapeType;
 	Landscape landscape, defaultLandscape;
 	Player players[2];
 	PlayerTopPanel topPanels[2];
-	bool GameOpening, quitSecondScreen, quitThirdScreen;
+	bool quitSecondScreen, quitThirdScreen, FirstRenderOfParty;
 	char WinnerName[256];
+	SDL_Texture *texureWordScore;
 };
