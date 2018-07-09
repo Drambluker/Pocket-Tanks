@@ -853,8 +853,8 @@ void DrawOpeningScreenOfGame(Scene *scene) {
 
 	SDL_RenderCopy(scene->renderer, textureWordPocketTanks, NULL, &WordPocketTanks_rect);
 	Draw_A_text(scene, WordBy_rect, " By ", colorBlack, colorFirstScreenBg, "Center", 12);
-	Draw_A_text(scene, Name_Hank_rect, "Hank Djambong", colorBlack, colorFirstScreenBg, "Center", 12);
-	Draw_A_text(scene, Contact_Hank_rect, "(hankdjambong@gmail.com)", colorBlack, colorFirstScreenBg, "Center", 12);
+	Draw_A_text(scene, Name_Hank_rect, "14karra (Hank Djambong)", colorBlack, colorFirstScreenBg, "Center", 12);
+	Draw_A_text(scene, Contact_Hank_rect, "Twitter@HDjambong", colorBlack, colorFirstScreenBg, "Center", 12);
 	Draw_A_text(scene, Name_Eric_rect, "Drambluker (Eric Vlaskin)", colorBlack, colorFirstScreenBg, "Center", 12);
 	Draw_A_text(scene, Contact_Eric_rect, "Twitter@drambluker", colorBlack, colorFirstScreenBg, "Center", 12);
 
