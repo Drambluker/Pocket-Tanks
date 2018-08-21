@@ -1,6 +1,6 @@
 # Pocket Tanks
 
-Pocket Tanks is a 2 players computer game. The point of the game is to use various weapons to attack the other player's tank. Each hit scores a certain amount of points, which varies based on the weapon. At the end of the match, the player with the highest points wins. The game features a fully destructible environment allowing for the probability of strategic play.
+Pocket Tanks is a 2 player computer game. The point of the game is to use various weapons to attack the other player's tank. Each hit scores a certain amount of points, which varies based on the weapon. At the end of the match, the player with the highest points wins. The game features a fully destructible environment allowing for the probability of strategic play.
 
 ## Built With
 
